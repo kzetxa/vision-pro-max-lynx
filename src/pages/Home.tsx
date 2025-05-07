@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import WorkoutCard from '../components/WorkoutCard';
 import { fetchWorkouts } from '../lib/api';
-import type { WorkoutWithBlock1Preview } from '../lib/types'; // Updated type
+import type { Workout } from '../lib/types'; // Back to using Workout type
 
 const Home: React.FC = () => {
-  const [workouts, setWorkouts] = useState<WorkoutWithBlock1Preview[]>([]); // Updated type
+  const [workouts, setWorkouts] = useState<Workout[]>([]); // Back to Workout[]
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

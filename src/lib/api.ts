@@ -2,19 +2,17 @@
 
 import type {
   AirtableListResponse,
+  WorkoutFields,
+  Workout,
   PopulatedWorkout,
-  PopulatedBlock,
-  WorkoutWithBlock1Preview,
-  WorkoutWithBlock1PreviewFields // Used for casting
-  // WorkoutFields, // Unused
-  // Workout, // Unused
-  // Block // Unused
+  PopulatedBlock
+  // Removed WorkoutWithBlock1Preview types
 } from './types';
 
 const API_BASE_URL = '/api'; // Proxied via vite.config.ts to Netlify functions
 
 // Fetch all workouts (initially without populated blocks for the home page)
-export const fetchWorkouts = async (): Promise<WorkoutWithBlock1Preview[]> => {
+export const fetchWorkouts = async (): Promise<Workout[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/getWorkouts`);
     if (!response.ok) {
@@ -22,9 +20,9 @@ export const fetchWorkouts = async (): Promise<WorkoutWithBlock1Preview[]> => {
       console.error("Failed to fetch workouts:", response.status, errorData);
       throw new Error(`HTTP error ${response.status}: ${errorData}`);
     }
-    // The server now returns AirtableListResponse<WorkoutWithBlock1PreviewFields>
-    const data: AirtableListResponse<WorkoutWithBlock1PreviewFields> = await response.json();
-    return data.records as WorkoutWithBlock1Preview[]; // Cast records to the more specific type
+    // Expecting AirtableListResponse<WorkoutFields>
+    const data: AirtableListResponse<WorkoutFields> = await response.json();
+    return data.records; // Returns Workout[] (which is AirtableRecord<WorkoutFields>[])
   } catch (error) {
     console.error("Error in fetchWorkouts:", error);
     throw error;

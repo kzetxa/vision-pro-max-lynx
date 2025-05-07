@@ -36,7 +36,7 @@ export interface ExerciseFields {
   "Explination 2"?: string;
   "Explination 3"?: string;
   "Explination 4"?: string;
-  "Primary Muscle Worked"?: string[]; // Assuming multi-select or lookup returning array of strings
+  "Primary Muscle Worked"?: string | string[]; // Example: Allowing string or array based on previous fix
   "Vimeo Code"?: string; // Embed code or ID
   // Add any other fields from your 'Exercise Library' table
 }
@@ -62,12 +62,6 @@ export interface PopulatedBlockFields extends Omit<BlockFields, 'Exercises'> {
 export type Block = AirtableRecord<BlockFields>;
 export type PopulatedBlock = AirtableRecord<PopulatedBlockFields>;
 
-// For WorkoutCard: a preview of Block 1, containing only essential fields for display
-export interface BlockPreviewFields {
-  "Public Name"?: string;
-  "card for preview"?: AirtableAttachment[];
-}
-
 // Level 1: Workout
 // Fields specific to the 'Workouts' table (tblqdC3fWyvyFMBxv)
 export interface WorkoutFields {
@@ -78,16 +72,11 @@ export interface WorkoutFields {
   "Block 2"?: string[]; // Array of Block Record IDs
   "Block 3"?: string[]; // Array of Block Record IDs
   "Code Block 1"?: string; // Text field
+  "card for preview with block (from Block 1)"?: string[]; // Changed to string[]
   // Add any other fields from your 'Workouts' table
 }
 
-// For the workout list on Home page, we want workout fields + Block 1 preview
-export interface WorkoutWithBlock1PreviewFields extends WorkoutFields {
-  resolvedBlock1Preview?: BlockPreviewFields;
-}
-export type WorkoutWithBlock1Preview = AirtableRecord<WorkoutWithBlock1PreviewFields>;
-
-export interface PopulatedWorkoutFields extends Omit<WorkoutFields, 'Block 1' | 'Block 2' | 'Block 3'> {
+export interface PopulatedWorkoutFields extends Omit<WorkoutFields, 'Block 1' | 'Block 2' | 'Block 3' | 'card for preview with block (from Block 1)'> {
   resolvedBlock1?: PopulatedBlock;
   resolvedBlock2?: PopulatedBlock;
   resolvedBlock3?: PopulatedBlock;

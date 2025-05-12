@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 // import type { WorkoutWithBlock1Preview } from '../lib/types'; // Old Type
 import type { SupabaseWorkoutPreview } from '../lib/types'; // New Type
 import { extractUrlFromStringArray } from '../lib/utils'; // Import the new utility function
+import styles from './WorkoutCard.module.scss'; // Import the SCSS module
 
 interface WorkoutCardProps {
   // workout: WorkoutWithBlock1Preview; // Old prop
@@ -27,39 +28,18 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workoutPreview }) => {
   const duration = workoutPreview.duration;
 
   return (
-    <Link to={`/workout/${workoutId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-      <div className="glassmorphic" style={{
-        padding: '0', // Remove padding from container, apply to content areas
-        overflow: 'hidden', // Ensure image corners are clipped by border-radius
-        height: '100%', // Make card fill grid cell height
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
+    <Link to={`/workout/${workoutId}`} className={styles.cardLink}>
+      <div className={styles.card}>
         <img 
           src={imageUrl}
           alt={title} 
-          style={{ 
-            width: '100%', 
-            height: '180px', // Fixed height for consistency 
-            objectFit: 'cover', // Crop image nicely
-            display: 'block' 
-          }} 
+          className={styles.image}
         />
-        <div style={{ padding: '1rem'}}> {/* Add padding to content area */}
-          <h3 style={{
-             marginTop: '0.5rem', 
-             marginBottom: '0.75rem', 
-             fontSize: '1.2em', 
-             color: 'var(--text-headings)',
-             // Truncate long titles
-             whiteSpace: 'nowrap',
-             overflow: 'hidden',
-             textOverflow: 'ellipsis'
-          }}>
+        <div className={styles.content}>
+          <h3 className={styles.title}>
              {title}
           </h3>
-          {/* Display other info if available */}
-          <div style={{ fontSize: '0.85em', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+          <div className={styles.details}>
              {focus && <div>Focus: {focus}</div>}
              {level && <div>Level: {level}</div>}
              {duration && <div>Duration: {duration}</div>}

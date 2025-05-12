@@ -1,0 +1,66 @@
+@use '../styles/theme.module.scss' as theme;
+
+.cardLink {
+  display: block; // Ensure the link takes up the block space
+  text-decoration: none;
+  color: inherit;
+  height: 100%; // Fill grid cell height
+  transition: transform theme.$transition-fast, box-shadow theme.$transition-medium;
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: theme.$box-shadow-lg;
+  }
+
+  &:focus-visible {
+    outline: 2px solid theme.$accent-primary;
+    outline-offset: 2px;
+    box-shadow: theme.$box-shadow-lg; // Keep shadow on focus
+  }
+}
+
+.card {
+  background-color: theme.$bg-secondary;
+  border-radius: theme.$border-radius-lg;
+  overflow: hidden; // Clip the image
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: theme.$border-width-thin solid theme.$border-primary;
+  box-shadow: theme.$box-shadow-md;
+}
+
+.image {
+  width: 100%;
+  height: 180px; // Maintain consistent image height
+  object-fit: cover;
+  display: block; // Remove potential extra space below image
+  background-color: theme.$bg-tertiary; // Placeholder bg
+}
+
+.content {
+  padding: theme.$spacing-md;
+  flex-grow: 1; // Allow content to push footer down if needed
+}
+
+.title {
+  margin-top: theme.$spacing-xs;
+  margin-bottom: theme.$spacing-sm;
+  font-size: 1.15em;
+  font-weight: 500;
+  color: theme.$text-headings;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.details {
+  font-size: 0.9em;
+  color: theme.$text-secondary;
+  line-height: 1.5;
+
+  div {
+    margin-bottom: theme.$spacing-xs;
+  }
+} 

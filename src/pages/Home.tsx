@@ -5,6 +5,7 @@ import { fetchWorkoutsForHome } from '../lib/api'; // New Supabase API call
 // import type { WorkoutWithBlock1Preview } from '../lib/types'; // Old type
 import type { SupabaseWorkoutPreview } from '../lib/types'; // New Supabase type
 import WorkoutCard from '../components/WorkoutCard';
+import styles from './Home.module.scss'; // Import the SCSS module
 
 const PAGE_LIMIT = 10;
 
@@ -104,27 +105,23 @@ const Home: React.FC = () => {
   }, [page, loadWorkouts]); // Triggered only by page changes (and initial mount)
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1 style={{ textAlign: 'center', marginBottom: '2rem', color: 'var(--text-headings)'}}>Available Workouts</h1>
+    <div className={styles.homeContainer}>
+      <h1 className={styles.title}>Available Workouts</h1>
       
       {/* Initial Loading Indicator */} 
-      {loadingInitial && <p style={{textAlign: 'center', color: 'var(--text-secondary)'}}>Loading workouts...</p>}
+      {loadingInitial && <p className={styles.statusMessage}>Loading workouts...</p>}
       
       {/* Error Display */} 
-      {error && <p style={{textAlign: 'center', color: 'var(--accent-color)'}}>Error: {error}</p>}
+      {error && <p className={styles.errorStatus}>Error: {error}</p>}
       
-      {/* No Workouts Message (only show if not initial loading and no error) */} 
+      {/* No Workouts Message */} 
       {!loadingInitial && workouts.length === 0 && !error && (
-        <p style={{textAlign: 'center', color: 'var(--text-secondary)'}}>No workouts found.</p>
+        <p className={styles.statusMessage}>No workouts found.</p>
       )}
 
-      {/* Workout Grid (show workouts even if loading more) */} 
+      {/* Workout Grid */} 
       {workouts.length > 0 && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '1.5rem',
-        }}>
+        <div className={styles.workoutGrid}>
           {workouts.map(workout => (
             <WorkoutCard key={workout.id} workoutPreview={workout} />
           ))}
@@ -132,13 +129,13 @@ const Home: React.FC = () => {
       )}
 
       {/* Load More Trigger / Indicator Area */} 
-      <div ref={loadMoreTriggerElement} style={{ height: '50px', textAlign: 'center', marginTop: '2rem' }}>
-        {/* Loading More Indicator (show only when loading more and not initial load) */} 
-        {loadingMore && <p style={{color: 'var(--text-secondary)'}}>Loading more...</p>}
+      <div ref={loadMoreTriggerElement} className={styles.loadMoreTrigger}>
+        {/* Loading More Indicator */} 
+        {loadingMore && <p>Loading more...</p>}
         
-        {/* End of List Message (show only if not loading and no more data) */} 
+        {/* End of List Message */} 
         {!loadingInitial && !loadingMore && !hasMore && workouts.length > 0 && 
-          <p style={{color: 'var(--text-secondary)'}}>No more workouts to load.</p>}
+          <p>No more workouts to load.</p>}
       </div>
     </div>
   );

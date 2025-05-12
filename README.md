@@ -1,37 +1,37 @@
-# Workout App (React + LynxJS + Vite + Supabase + Radix UI)
+# Workout App (React + Vite + TS + Supabase + Radix UI)
 
-This project is a frontend application for a workout app, using React, Vite, TypeScript, Supabase for persistence, and Radix UI for components. The backend data is sourced from Airtable via Netlify Functions (or a similar backend proxy).
+This project is a frontend application for a workout app, using React, Vite, TypeScript, and Radix UI components. It fetches data directly from Supabase. An optional sync script is provided to populate Supabase tables from an Airtable base.
 
 ## Project Structure
 
 ```
 /src
 ├── /components
-│   ├── WorkoutCard.tsx         # Displays a single workout on the home page
-│   ├── BlockViewer.tsx         # Displays a single block of exercises
-│   ├── ExerciseTile.tsx        # Displays a single exercise
-│   └── CompletionChart.tsx     # Displays a chart of completed muscle groups
+│   ├── WorkoutCard.tsx         # Displays a single workout preview on the home page
+│   ├── BlockViewer.tsx         # Displays a single block of exercises within a workout
+│   ├── ExerciseTile.tsx        # Displays a single exercise within a block
+│   └── CompletionChart.tsx     # (Future) Displays a chart of completed muscle groups
 ├── /pages
-│   ├── Home.tsx                # Home page, lists available workouts
-│   └── Workout.tsx             # Workout detail page
+│   ├── Home.tsx                # Home page, lists available workouts with infinite scroll
+│   └── WorkoutPage.tsx         # Workout detail page, displays blocks and exercises
 ├── /lib
-│   ├── supabase.ts           # Supabase client and data functions
-│   ├── api.ts                # Airtable data fetching functions (via proxy)
-│   └── types.ts              # TypeScript type definitions
+│   ├── supabase.ts           # Supabase client initialization
+│   ├── api.ts                # Supabase data fetching functions
+│   ├── types.ts              # TypeScript type definitions (Airtable and Supabase)
+│   └── utils.ts              # Utility functions
 ├── App.tsx                   # Main application component with routing
 ├── main.tsx                  # React application entry point
-└── index.css                 # Global styles
+└── index.css                 # Global styles (to be potentially replaced by modules)
 
-/api                          # Netlify functions (or equivalent backend proxy)
-├── getWorkouts.ts            # Fetches all workouts from Airtable view
-├── getWorkoutById.ts         # Fetches a specific workout and its details
-└── getBlockById.ts           # Fetches a specific block and its details
+/scripts
+└── sync.ts                   # Script to sync data from Airtable to Supabase
 
 index.html                    # Main HTML file
 package.json                  # Project dependencies and scripts
- vite.config.ts                # Vite configuration (including proxy for API calls)
-ttsconfig.json                 # TypeScript compiler options
+vite.config.ts                # Vite configuration
+tsconfig.json                 # TypeScript compiler options
 README.md                     # This file
+.env.example                  # Example environment variables
 ```
 
 ## Setup and Running
@@ -39,7 +39,7 @@ README.md                     # This file
 1.  **Clone the repository:**
     ```bash
     git clone <repository-url>
-    cd workout-app
+    cd vision-pro-max-lynx # Or your project directory name
     ```
 
 2.  **Install dependencies:**
@@ -50,44 +50,64 @@ README.md                     # This file
     ```
 
 3.  **Set up Environment Variables:**
-    Create a `.env` file in the root of the project and add your Airtable and Supabase credentials:
-    ```env
-    SUPABASE_URL=your_supabase_url
-    SUPABASE_ANON_KEY=your_supabase_anon_key
-    AIRTABLE_API_KEY=your_airtable_api_key 
+    Copy the `.env.example` file to `.env` and add your Supabase credentials:
+    ```dotenv
+    # Required for the frontend application
+    VITE_SUPABASE_URL="your_supabase_project_url"
+    VITE_SUPABASE_ANON_KEY="your_supabase_anon_key"
+
+    # Required ONLY for running the sync script (scripts/sync.ts)
+    AIRTABLE_API_KEY="your_airtable_api_key"
+    AIRTABLE_BASE_ID="your_airtable_base_id"
+    # Example: AIRTABLE_TABLE_NAMES='{"exercises": "Exercise Library", "blocksOverview": "Blocks Overview", "individualBlocks": "Individual Blocks", "workouts": "Workouts"}'
+    AIRTABLE_TABLE_NAMES='your_airtable_table_names_json_string'
+    SUPABASE_URL="your_supabase_project_url" # Yes, needed again for the script
+    SUPABASE_SERVICE_ROLE_KEY="your_supabase_service_role_key" # Service role key needed for upserting
     ```
-    *   `SUPABASE_URL` and `SUPABASE_ANON_KEY` are for the frontend Supabase client.
-    *   `AIRTABLE_API_KEY` is used by the Netlify functions (backend). You'll need to set this in your Netlify environment variables when deploying.
+    *   `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are exposed to the frontend client (safe).
+    *   The `AIRTABLE_*` and `SUPABASE_SERVICE_ROLE_KEY` variables are sensitive and should only be used in the `.env` file for the local sync script. **Do not commit your `.env` file.**
 
-4.  **Netlify Dev (for local development with functions):**
-    If you are using Netlify Functions, you'll want to use the Netlify CLI to serve your functions and proxy them correctly.
-    *   Install Netlify CLI: `npm install -g netlify-cli`
-    *   Run: `netlify dev`
-    This will typically start your Vite dev server and the functions server, usually making the functions available at `http://localhost:8888/.netlify/functions/`. The `vite.config.ts` is set up to proxy `/api` requests to this.
-
-5.  **Run the Vite development server (if not using `netlify dev` for frontend):**
+4.  **Run the Vite development server:**
     ```bash
     npm run dev
     # or
     yarn dev
     ```
-    The application will be available at `http://localhost:5173` (or another port if 5173 is busy).
+    The application will be available at `http://localhost:5174` (or the next available port).
 
-## Backend API Data Source (Airtable)
+## Syncing Data from Airtable (Optional)
 
-*   The application fetches data from Airtable using its REST API.
-*   API requests are proxied through Netlify Functions (located in the `/api` directory) to protect the Airtable API key.
-*   **Primary Data Endpoint (Workouts):** `https://api.airtable.com/v0/appp2JjMRlSvTyvVY/tblqdC3fWyvyFMBxv?view=workout-proto`
-    *   This endpoint is used by the `getWorkouts` function.
+If you have workout data structured in Airtable according to the schema expected by `scripts/sync.ts` (check the type definitions in `src/lib/types.ts` and the script itself), you can populate your Supabase tables using this script.
 
-## Airtable Structure
+**Prerequisites:**
+*   Ensure your Supabase project has tables matching the script's expectations (`exercise_library`, `blocks_overview`, `individual_blocks`, `workouts`) with appropriate columns and relationships.
+*   Set the necessary environment variables in your `.env` file (see step 3).
 
-*   **Level 1: Workouts** (table: `tblqdC3fWyvyFMBxv`)
-    *   Fields: `Block 1`, `Block 2`, `Block 3` (linked to Blocks table), `Name`, `Type of workout`, etc.
-*   **Level 2: Blocks** (table: `tbloYDsl2c56zGndO`)
-    *   Fields: `Block Name`, `Public Name`, `Exercises` (linked to Exercise Library), `Sets & Reps`, etc.
-*   **Level 3: Exercises** (table: `tbl8PKDZMG5nv73Hx`)
-    *   Fields: `Current Name`, `vimeo video`, `Explination 1-4`, `Primary Muscle Worked`, etc.
+**Running the sync script:**
+```bash
+npx tsx ./scripts/sync.ts
+```
+This will fetch data from your specified Airtable tables and upsert it into the corresponding Supabase tables.
+
+## Frontend Functionality
+
+*   **Home Page (`/`):**
+    *   Fetches and displays workout previews from the Supabase `workouts` table.
+    *   Uses infinite scrolling to load more workouts as the user scrolls down.
+    *   Each workout card links to its detail page.
+*   **Workout Page (`/workout/:workoutId`):**
+    *   Fetches detailed data for a specific workout from Supabase, including related blocks and exercises via joins.
+    *   Displays workout details, blocks, and exercises.
+    *   (Future) Will include functionality for tracking progress and completion.
+
+## Styling
+
+*   Styling is primarily handled using **CSS/SCSS Modules** (`.module.css` or `.module.scss`).
+*   A central theme file (`src/styles/theme.module.scss`) defines reusable SCSS variables for colors, spacing, shadows, borders, and radii.
+*   Component-specific module files should `@use '../styles/theme.module.scss' as theme;` to access these variables.
+*   The global `src/index.css` file should ideally only contain minimal base resets or global font settings, not component-specific styles.
+*   Radix UI components are used for some UI elements (Dialog, Checkbox, etc.). Their styling can be customized using standard CSS/SCSS targeting their data attributes, or potentially overridden within module files if needed.
+*   The previous glassmorphism theme applied via `index.css` and inline styles has been removed in favor of the module-based approach.
 
 ## Frontend Goals
 
@@ -107,10 +127,3 @@ README.md                     # This file
 *   Client progress is persisted using Supabase.
 *   Tables: `workout_progress`, `exercise_completion` (or a combined table).
 *   Schema: `{ workoutId, clientid, exerciseId, blockId, status }`
-
-## Constraints & Conventions
-
-*   Use `fetch` with Bearer headers for Airtable API calls (handled in backend functions).
-*   Minimal, clean, modern UI (no Tailwind CSS).
-*   Utilize Radix UI components.
-*   Glassmorphism style for cards: `backdrop-filter: blur(12px);`, `border-radius: 16px;`, `background: rgba(255,255,255,0.1)`. 

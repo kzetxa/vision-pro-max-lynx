@@ -1,0 +1,78 @@
+/*
+ * Reusable Theme Variables
+ * Import this into component-specific SCSS modules.
+ */
+
+// --- Color Palette (Modern & Minimalist) ---
+
+// Base Colors
+$bg-primary: #111318; // Very dark, slightly desaturated blue/grey
+$bg-secondary: #1a1d23; // Slightly lighter background for cards/surfaces
+$bg-tertiary: #252931; // For subtle hover states or nested surfaces
+
+// Text Colors
+$text-primary: #e0e2e7; // Off-white, easy on the eyes
+$text-secondary: #9ba1ae; // Grey for secondary info, placeholders
+$text-headings: #f0f2f5; // Brighter white for headings
+$text-accent: #5a8cff; // Example accent color - vibrant blue
+$text-accent-hover: #7aa3ff;
+$text-error: #ff6b6b;
+
+// Accent Colors
+$accent-primary: $text-accent;
+$accent-primary-hover: $text-accent-hover;
+$accent-success: #4caf50;
+$accent-warning: #ffc107;
+$accent-error: $text-error;
+
+// Border Colors
+$border-primary: #343a46; // Subtle border for containers/inputs
+$border-secondary: #49505e; // Slightly more prominent border
+$border-accent: $accent-primary; 
+
+// --- Sizing & Spacing ---
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-xxl: 48px;
+
+// --- Borders & Radius ---
+$border-width-thin: 1px;
+$border-width-medium: 2px;
+
+$border-radius-sm: 4px;
+$border-radius-md: 8px;
+$border-radius-lg: 12px;
+$border-radius-xl: 16px;
+$border-radius-round: 50%;
+
+// --- Shadows ---
+// Subtle shadows for depth
+$box-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+$box-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+$box-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+$box-shadow-inset: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+
+// --- Dialog Specific (Example Variables) ---
+$dialog-overlay-bg: rgba(0, 0, 0, 0.7);
+$dialog-content-bg: $bg-secondary;
+$dialog-content-shadow: $box-shadow-lg;
+$dialog-content-radius: $border-radius-lg;
+$dialog-content-padding: $spacing-lg;
+
+// --- Transitions ---
+$transition-fast: 0.15s ease-out;
+$transition-medium: 0.3s ease-out;
+
+// --- Font ---
+$font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  sans-serif;
+
+// --- Exports (Allow importing variables into JS/TS if needed via :export block) ---
+// :export {
+//   colorPrimary: $primary-color;
+//   ...etc
+// } 

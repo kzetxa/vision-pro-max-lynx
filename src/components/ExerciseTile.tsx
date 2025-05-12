@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 // import type { Exercise } from '../lib/types'; // Old Airtable Type
 import type { SupabaseBlockExercise, SupabaseExercise } from '../lib/types'; // New Supabase Type
 import * as RadixCheckbox from '@radix-ui/react-checkbox';
 import * as RadixTabs from '@radix-ui/react-tabs';
 import { CheckIcon } from '@radix-ui/react-icons';
+import styles from './ExerciseTile.module.scss'; // Import styles
+import { parseSetsAndReps } from '../lib/utils'; // Import the parser
 // import * as Checkbox from '@radix-ui/react-checkbox'; // Will add later
 // import { CheckIcon } from '@radix-ui/react-icons'; // Will add later for checkbox
 
@@ -11,43 +13,43 @@ interface ExerciseTileProps {
   // exercise: Exercise; // Old Airtable Type
   blockExercise: SupabaseBlockExercise; // New Supabase Type
   // onCompletionChange?: (exerciseId: string, setId: string | number, completed: boolean) => void; // Will need update for Supabase IDs
+  // Add a callback for when the entire exercise is completed
+  onExerciseComplete?: (blockExerciseId: string) => void;
 }
 
-const getTabTriggerStyle = (isActive?: boolean): React.CSSProperties => ({
-  all: 'unset',
-  fontFamily: 'inherit',
-  backgroundColor: 'transparent',
-  padding: '0 15px',
-  height: '40px', // Slightly taller tabs
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  color: isActive ? 'var(--text-headings)' : 'var(--text-secondary)',
-  fontSize: '0.9em',
-  lineHeight: 1,
-  cursor: 'pointer',
-  borderBottom: `2px solid ${isActive ? 'var(--accent-color)' : 'transparent'}`,
-  transition: 'color 0.2s ease-out, border-color 0.2s ease-out',
-  marginRight: '10px',
-});
-
-const ExerciseTile: React.FC<ExerciseTileProps> = ({ blockExercise }) => {
+const ExerciseTile: React.FC<ExerciseTileProps> = ({ blockExercise, onExerciseComplete }) => {
   // Extract exercise details from the nested exercise object
   const exercise: SupabaseExercise | null = blockExercise.exercise; 
+
+  // Parse sets and reps using the utility function
+  // useMemo will ensure this parsing only happens if blockExercise changes
+  const { sets: parsedSetCount, reps: parsedRepCount } = useMemo(() => 
+    parseSetsAndReps(blockExercise)
+  , [blockExercise]);
+
+  const [currentSet, setCurrentSet] = useState<number>(1);
+  // State for reps completed in the *current* set
+  const [repsCompleted, setRepsCompleted] = useState<boolean[]>(() => 
+    Array(parsedRepCount).fill(false)
+  );
+  // Add state to track if the whole exercise is done
+  const [isExerciseDone, setIsExerciseDone] = useState<boolean>(false);
+
+  // Effect to reset repsCompleted when parsedRepCount or currentSet changes
+  useEffect(() => {
+    // Only reset if the exercise isn't marked as done
+    if (!isExerciseDone) {
+      setRepsCompleted(Array(parsedRepCount).fill(false));
+    }
+  }, [parsedRepCount, currentSet, isExerciseDone]); 
 
   if (!exercise) {
     // Handle case where exercise data might be missing (though unlikely with the current query)
     return (
-        <div style={{
-          border: '1px solid var(--glass-border-color)',
-          backgroundColor: 'var(--card-bg-darker)', 
-          padding: '20px',
-          margin: '15px 0',
-          borderRadius: 'var(--glass-border-radius)',
-          color: 'var(--text-secondary)',
-          textAlign: 'center'
-        }}>
-            Exercise details not available for this entry (ID: {blockExercise.id}).
+        <div className={styles.exerciseTile}>
+            <p className={styles.statusMessage}>
+                Exercise details not available for this entry (ID: {blockExercise.id}).
+            </p>
         </div>
     );
   }
@@ -60,52 +62,62 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({ blockExercise }) => {
   const explanation1 = exercise.explanation_1;
   
   // Get sets/reps from blockExercise (individual block data)
-  const setCount = blockExercise.sets ?? 3; // Default to 3 sets if not specified
-  const setsRepsText = blockExercise.sets_and_reps_text;
+  const setsRepsTextForDisplay = blockExercise.sets_and_reps_text;
   const unit = blockExercise.unit;
   const specialInstructions = blockExercise.special_instructions;
 
-  // State for checkboxes based on actual set count
-  const [setsCompleted, setSetsCompleted] = useState<boolean[]>(Array(setCount).fill(false));
   const [activeTab, setActiveTab] = useState(vimeoCode ? 'video' : (explanation1 ? 'details' : ''));
 
-  const handleSetCompletion = (index: number) => {
-    const newSetsCompleted = [...setsCompleted];
-    newSetsCompleted[index] = !newSetsCompleted[index];
-    setSetsCompleted(newSetsCompleted);
-    // TODO: Call onCompletionChange here to update Supabase
-    // Need Supabase IDs: blockExercise.id (individual block instance), exercise.id (exercise library entry)
-    // console.log(`Exercise ${exercise.id}, Set ${index + 1} completion: ${newSetsCompleted[index]}`);
+  const handleRepCompletion = (repIndex: number) => {
+    // Prevent changes if exercise is already done
+    if (isExerciseDone) return;
+
+    const newRepsCompleted = [...repsCompleted];
+    newRepsCompleted[repIndex] = !newRepsCompleted[repIndex];
+    setRepsCompleted(newRepsCompleted);
+
+    // Check if all reps in *this* set are now complete
+    const allRepsDoneForSet = newRepsCompleted.every(Boolean);
+
+    if (allRepsDoneForSet) {
+      if (currentSet < parsedSetCount) {
+        // Advance to the next set
+        console.log(`Set ${currentSet} complete for ${exercise?.current_name}. Advancing to next set.`);
+        // Resetting reps is handled by the useEffect listening to currentSet change
+        setCurrentSet(prevSet => prevSet + 1); 
+      } else {
+        // Last set completed
+        console.log(`All sets complete for ${exercise?.current_name}!`);
+        setIsExerciseDone(true);
+        // Call the completion callback if provided
+        onExerciseComplete?.(blockExercise.id);
+      }
+    }
   };
 
   return (
-    <div style={{
-      border: '1px solid var(--glass-border-color)',
-      backgroundColor: 'var(--card-bg-darker)', 
-      padding: '20px',
-      margin: '15px 0',
-      borderRadius: 'var(--glass-border-radius)'
-    }}>
-      <h5 style={{ marginTop: 0, marginBottom: '8px', fontSize: '1.15em', color: 'var(--text-headings)' }}>{exerciseName}</h5>
+    // Add a class if the exercise is done for potential styling
+    <div className={`${styles.exerciseTile} ${isExerciseDone ? styles.exerciseDone : ''}`}>
+      <h5 className={styles.title}>{exerciseName}</h5>
       {/* Display Sets/Reps/Unit/Instructions if available */}
-      <div style={{ fontSize: '0.9em', margin: '0 0 15px 0', color: 'var(--text-secondary)' }}>
-          {setsRepsText && <div>Sets/Reps: {setsRepsText}</div>}
+      <div className={styles.details}>
+          {setsRepsTextForDisplay && <div>Sets/Reps: {setsRepsTextForDisplay}</div>}
+          {/* Optionally display parsed counts: <div>Parsed: {parsedSetCount} sets of {parsedRepCount} reps</div> */}
           {unit && <div>Unit: {unit}</div>}
           {muscleWorked !== 'N/A' && <div>Muscle: {muscleWorked}</div>}
-          {specialInstructions && <div style={{marginTop: '5px'}}>Notes: {specialInstructions}</div>}
+          {specialInstructions && <div>Notes: {specialInstructions}</div>}
       </div>
       
       {(vimeoCode || explanation1) && (
-        <RadixTabs.Root defaultValue={activeTab} onValueChange={setActiveTab} style={{ width: '100%' }}>
-           {/* Tabs List and Content - use vimeoCode and explanation1 */}
-          <RadixTabs.List style={{ display: 'flex', borderBottom: '1px solid var(--glass-border-color)', marginBottom: '15px' }}>
+        <RadixTabs.Root defaultValue={activeTab} onValueChange={setActiveTab}>
+          <RadixTabs.List className={styles.tabsList}>
             {vimeoCode && (
-              <RadixTabs.Trigger value="video" style={getTabTriggerStyle(activeTab === 'video')}>
+              <RadixTabs.Trigger value="video" className={styles.tabsTrigger}>
                 Video
               </RadixTabs.Trigger>
             )}
             {explanation1 && (
-              <RadixTabs.Trigger value="details" style={getTabTriggerStyle(activeTab === 'details')}>
+              <RadixTabs.Trigger value="details" className={styles.tabsTrigger}>
                 Details
               </RadixTabs.Trigger>
             )}
@@ -113,67 +125,60 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({ blockExercise }) => {
 
           {vimeoCode && (
             <RadixTabs.Content value="video">
-              <div style={{ margin: '10px 0', aspectRatio: '16/9', overflow: 'hidden', borderRadius: 'calc(var(--glass-border-radius) - 4px)' }}>
+              <div className={styles.videoContainer}>
                 <iframe 
+                  className={styles.iframe}
                   src={`https://player.vimeo.com/video/${vimeoCode}`}
-                  width="100%" 
-                  height="100%" // Fill the aspect ratio container
                   frameBorder="0" 
                   allow="autoplay; fullscreen; picture-in-picture" 
                   allowFullScreen
                   title={exerciseName}
-                  style={{display: 'block'}}
                 ></iframe>
               </div>
             </RadixTabs.Content>
           )}
           {explanation1 && (
             <RadixTabs.Content value="details">
-              <p style={{ fontSize: '0.95em', lineHeight: 1.65, color: 'var(--text-primary)', padding: '5px 0' }}>{explanation1}</p>
-              {/* Consider adding explanation_2, 3, 4 if needed */}
+              <p className={styles.explanation}>{explanation1}</p>
             </RadixTabs.Content>
           )}
         </RadixTabs.Root>
       )}
       {!(vimeoCode || explanation1) && (
-          <p style={{color: 'var(--text-secondary)', textAlign: 'center', padding: '20px 0'}}>No video or details available.</p>
+          <p className={styles.statusMessage}>No video or details available.</p>
       )}
 
-      <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: `1px solid ${ (vimeoCode || explanation1) ? 'var(--glass-border-color)' : 'transparent'}` }}>
-        <p style={{fontSize: '0.95em', marginBottom: '10px', fontWeight: 500, color: 'var(--text-headings)'}}>Track Sets ({setCount}):</p>
-        {/* Map over the actual number of sets */}
-        {setsCompleted.map((isCompleted, index) => (
-          <div key={index} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+      {/* Updated Set and Rep Tracking Section */}
+      <div className={styles.setsContainer}>
+        <p className={styles.setsTitle}>
+          {/* Indicate completion status */}
+          {isExerciseDone 
+            ? `Exercise Complete! (${parsedSetCount} sets of ${parsedRepCount} reps)`
+            : `Set ${currentSet} of ${parsedSetCount} (Reps: ${parsedRepCount})`
+          }
+        </p>
+        {/* Only show reps if the exercise isn't done */}
+        {!isExerciseDone && repsCompleted.map((isCompleted, repIndex) => (
+          <div key={`rep-${repIndex}`} className={styles.setRow}>
             <RadixCheckbox.Root
-              // Use Supabase IDs in the element ID for uniqueness
-              id={`set-${blockExercise.id}-${index}`}
+              id={`rep-${blockExercise.id}-${currentSet}-${repIndex}`}
               checked={isCompleted}
-              onCheckedChange={() => handleSetCompletion(index)}
-              style={{ /* Styles remain the same */ 
-                all: 'unset',
-                backgroundColor: isCompleted ? 'var(--accent-color)' : 'rgba(255,255,255,0.15)',
-                width: '22px',
-                height: '22px',
-                borderRadius: '5px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: `0 1px 3px rgba(0,0,0,0.2)`,
-                cursor: 'pointer',
-                marginRight: '10px',
-                border: isCompleted ? 'none' : '1px solid rgba(255,255,255,0.25)',
-                transition: 'background-color 0.1s ease-out'
-              }}
+              onCheckedChange={() => handleRepCompletion(repIndex)}
+              className={styles.checkboxRoot}
+              disabled={isExerciseDone} // Disable checkbox when done
             >
-              <RadixCheckbox.Indicator style={{ color: 'white' }}>
-                <CheckIcon width={18} height={18} />
+              <RadixCheckbox.Indicator className={styles.checkboxIndicator}>
+                <CheckIcon />
               </RadixCheckbox.Indicator>
             </RadixCheckbox.Root>
-            <label htmlFor={`set-${blockExercise.id}-${index}`} style={{ fontSize: '0.9em', cursor: 'pointer', color: 'var(--text-primary)' }}>
-              Set {index + 1}
+            <label htmlFor={`rep-${blockExercise.id}-${currentSet}-${repIndex}`} className={styles.setLabel}>
+              Rep {repIndex + 1}
             </label>
           </div>
         ))}
+        {isExerciseDone && (
+            <p className={styles.completionMessage}>Great job!</p>
+        )}
       </div>
     </div>
   );

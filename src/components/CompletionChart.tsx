@@ -10,23 +10,14 @@ const CompletionChart: React.FC<CompletionChartProps> = ({ workoutData }) => {
   // For example, aggregate completed exercises by muscle group.
 
   return (
-    <div className="glassmorphic" style={{ marginTop: '30px', padding: '20px', textAlign: 'center' }}>
-      <h4 style={{marginBottom: '20px'}}>Workout Summary</h4>
-      {workoutData && <p style={{fontSize: '0.9em', marginBottom: '10px'}}>Analyzing: {workoutData.fields.Name}</p>}
-      <div style={{
-        width: '200px',
-        height: '200px',
-        borderRadius: '50%',
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        margin: '0 auto 15px auto'
-      }}>
+    <div className="glassmorphic">
+      <h4>Workout Summary</h4>
+      {workoutData && <p>Analyzing: {workoutData.fields.Name}</p>}
+      <div>
         <p>Pie Chart Placeholder</p>
       </div>
       <p>Muscle groups breakdown will be shown here.</p>
-      <p style={{fontSize: '0.8em', color: '#ccc', marginTop: '15px'}}>Client ID: {workoutData?.id /* This is workoutId, clientID is separate */}</p>
+      <p>Client ID: {workoutData?.id /* This is workoutId, clientID is separate */}</p>
     </div>
   );
 };

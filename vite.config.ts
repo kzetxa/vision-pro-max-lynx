@@ -4,13 +4,11 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8888/.netlify/functions',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-    },
-  },
+  css: {
+    modules: {
+      localsConvention: 'camelCaseOnly', // Use camelCase for imported class names (e.g., styles.myClass)
+      // Optional: Configure generated scope name (useful for debugging)
+      // generateScopedName: '[name]__[local]___[hash:base64:5]', 
+    }
+  }
 }) 

@@ -1,0 +1,54 @@
+@use '../styles/theme.module.scss' as theme;
+
+.homeContainer {
+  width: 100%;
+  max-width: 1200px; // Max width for content
+  margin: 0 auto;
+  padding: theme.$spacing-lg theme.$spacing-md;
+
+  @media (min-width: 768px) {
+    padding: theme.$spacing-xl theme.$spacing-lg;
+  }
+}
+
+.title {
+  text-align: center;
+  margin-bottom: theme.$spacing-xl;
+  color: theme.$text-headings;
+  font-size: 2em;
+  font-weight: 600;
+
+  @media (min-width: 768px) {
+    font-size: 2.5em;
+  }
+}
+
+.statusMessage {
+  text-align: center;
+  color: theme.$text-secondary;
+  padding: theme.$spacing-xl 0;
+  font-size: 1.1em;
+}
+
+.errorStatus {
+  composes: statusMessage;
+  color: theme.$text-error;
+  font-weight: 500;
+}
+
+.workoutGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: theme.$spacing-lg;
+
+  @media (min-width: 480px) {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+}
+
+.loadMoreTrigger {
+  height: 60px; // Increased height for easier trigger
+  text-align: center;
+  margin-top: theme.$spacing-xl;
+  color: theme.$text-secondary;
+} 

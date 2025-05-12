@@ -1,0 +1,37 @@
+@use '../styles/theme.module.scss' as theme;
+
+.blockContainer {
+  background-color: theme.$bg-secondary;
+  border: theme.$border-width-thin solid theme.$border-primary;
+  border-radius: theme.$border-radius-lg;
+  padding: theme.$spacing-lg;
+  margin-bottom: theme.$spacing-lg;
+  box-shadow: theme.$box-shadow-md;
+}
+
+.title {
+  margin-top: 0;
+  color: theme.$text-headings;
+  border-bottom: theme.$border-width-thin solid theme.$border-primary;
+  padding-bottom: theme.$spacing-sm;
+  margin-bottom: theme.$spacing-md;
+  font-size: 1.4em;
+  font-weight: 500;
+}
+
+.blockInfo {
+  margin-bottom: theme.$spacing-md;
+  font-size: 0.9em;
+  color: theme.$text-secondary;
+  line-height: 1.5;
+
+  div {
+    margin-bottom: theme.$spacing-xs / 2;
+  }
+}
+
+.statusMessage {
+  color: theme.$text-secondary;
+  text-align: center;
+  padding: theme.$spacing-md 0;
+} 

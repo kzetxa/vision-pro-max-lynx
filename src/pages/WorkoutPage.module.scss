@@ -1,0 +1,184 @@
+@use '../styles/theme.module.scss' as theme;
+
+.workoutPageContainer {
+  width: 100%;
+  max-width: 900px; // Max width for workout details
+  margin: theme.$spacing-lg auto;
+  padding: theme.$spacing-md;
+  background-color: theme.$bg-primary; // Page container distinct from cards
+
+  @media (min-width: 768px) {
+    padding: theme.$spacing-xl;
+    margin: theme.$spacing-xl auto;
+  }
+}
+
+.title {
+  text-align: center;
+  margin-bottom: theme.$spacing-xs;
+  color: theme.$text-headings;
+  font-size: 1.8em;
+  font-weight: 600;
+}
+
+.clientId {
+  text-align: center;
+  font-size: 0.9em;
+  color: theme.$text-secondary;
+  margin-bottom: theme.$spacing-xl;
+}
+
+.statusMessage {
+  text-align: center;
+  color: theme.$text-secondary;
+  padding: theme.$spacing-xl 0;
+  font-size: 1.1em;
+}
+
+.errorStatus {
+  composes: statusMessage;
+  color: theme.$text-error;
+  font-weight: 500;
+}
+
+.blocksHeader {
+  margin-top: theme.$spacing-xl;
+  margin-bottom: theme.$spacing-md;
+  border-bottom: theme.$border-width-thin solid theme.$border-primary;
+  padding-bottom: theme.$spacing-sm;
+  color: theme.$text-headings;
+  font-size: 1.5em;
+  font-weight: 500;
+}
+
+// --- Radix Dialog Styles ---
+.dialogOverlay {
+  background-color: theme.$dialog-overlay-bg;
+  position: fixed;
+  inset: 0;
+  z-index: 50; // Ensure it's above other content
+  animation: overlayShow theme.$transition-fast forwards;
+}
+
+.dialogContent {
+  background-color: theme.$dialog-content-bg;
+  border-radius: theme.$dialog-content-radius;
+  box-shadow: theme.$dialog-content-shadow;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90vw;
+  max-width: 480px;
+  max-height: 85vh;
+  padding: theme.$dialog-content-padding;
+  color: theme.$text-primary;
+  border: theme.$border-width-thin solid theme.$border-primary;
+  z-index: 51;
+  animation: contentShow theme.$transition-fast forwards;
+  overflow-y: auto; // In case content is too tall
+}
+
+.dialogTitle {
+  margin: 0 0 theme.$spacing-md 0;
+  font-weight: 600;
+  font-size: 1.3em;
+  color: theme.$text-headings;
+}
+
+.dialogDescription {
+  margin-bottom: theme.$spacing-lg;
+  color: theme.$text-primary;
+  font-size: 1em;
+  line-height: 1.6;
+}
+
+.dialogActions {
+  display: flex;
+  margin-top: theme.$spacing-lg;
+  justify-content: flex-end;
+  gap: theme.$spacing-sm;
+}
+
+.dialogButton {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: theme.$border-radius-md;
+  padding: theme.$spacing-sm theme.$spacing-md;
+  font-size: 0.95em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color theme.$transition-fast, box-shadow theme.$transition-fast;
+
+  &:focus-visible {
+    outline: 2px solid theme.$accent-primary;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px theme.$bg-primary, 0 0 0 4px theme.$accent-primary; // Inner and outer ring
+  }
+}
+
+.dialogButtonPrimary {
+  composes: dialogButton;
+  background-color: theme.$accent-primary;
+  color: white; // Explicitly white for primary button text
+
+  &:hover {
+    background-color: theme.$accent-primary-hover;
+  }
+}
+
+.dialogButtonSecondary {
+  composes: dialogButton;
+  background-color: theme.$bg-tertiary;
+  color: theme.$text-primary;
+  border: theme.$border-width-thin solid theme.$border-primary;
+
+  &:hover {
+    background-color: theme.$border-primary; // Darken slightly
+  }
+}
+
+.dialogCloseButton {
+  all: unset;
+  font-family: inherit;
+  border-radius: theme.$border-radius-round;
+  height: 30px;
+  width: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: theme.$text-secondary;
+  position: absolute;
+  top: theme.$spacing-md;
+  right: theme.$spacing-md;
+  cursor: pointer;
+  transition: background-color theme.$transition-fast, color theme.$transition-fast;
+
+  &:hover {
+    background-color: theme.$bg-tertiary;
+    color: theme.$text-primary;
+  }
+
+  &:focus-visible {
+    outline: 2px solid theme.$accent-primary;
+    outline-offset: 1px;
+    box-shadow: 0 0 0 2px theme.$bg-secondary, 0 0 0 4px theme.$accent-primary;
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@keyframes overlayShow {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes contentShow {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+} 

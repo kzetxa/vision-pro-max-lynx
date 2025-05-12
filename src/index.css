@@ -1,22 +1,15 @@
 :root {
-  --glass-bg-color: rgba(40, 45, 58, 0.6); /* Darker base for the gradient to show through */
-  --glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 100%);
-  --glass-border-color: rgba(255, 255, 255, 0.15);
-  --glass-blur: 10px;
-  --glass-border-radius: 12px;
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-
-  --text-primary: #e1e1e6;
-  --text-secondary: #adb5bd; /* For less important text */
-  --text-headings: #f0f0f5;
-  --accent-color: #007aff;
-  --accent-color-hover: #0056b3;
-  --bg-color: #121418; /* Even darker, more refined background */
-  --card-bg-darker: rgba(30, 33, 40, 0.7);
-
+  /* Re-declare primary font from theme.module.scss for global access if needed */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
+
+  /* Base background and text colors from theme (approximated for CSS) */
+  --bg-primary-css: #111318; 
+  --text-primary-css: #e0e2e7;
+  --text-headings-css: #f0f2f5;
+  --accent-primary-css: #5a8cff;
+  --accent-primary-hover-css: #7aa3ff;
 }
 
 body {
@@ -24,83 +17,42 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--bg-color);
-  color: var(--text-primary);
+  background-color: var(--bg-primary-css); /* Use declared CSS var */
+  color: var(--text-primary-css);       /* Use declared CSS var */
   line-height: 1.6;
 }
 
 #root {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px 15px; /* Adjusted padding */
+  /* display: flex; */ /* Removed: let pages/components control their own layout */
+  /* flex-direction: column; */
+  /* align-items: center; */
+  /* padding: 20px 15px; */ /* Removed: handled by page containers now */
   box-sizing: border-box;
 }
 
-.glassmorphic {
-  background-color: var(--glass-bg-color);
-  background-image: var(--glass-gradient);
-  border-radius: var(--glass-border-radius);
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border-color);
-}
-
-/* General link styling */
+/* Minimal global link styling - can be overridden by modules */
 a {
-  color: var(--accent-color);
+  color: var(--accent-primary-css);
   text-decoration: none;
-  transition: color 0.2s ease-in-out;
+  transition: color 0.15s ease-out;
 }
 a:hover, a:focus {
-  color: var(--accent-color-hover);
-  outline: none; /* Remove default outline if custom focus is handled */
+  color: var(--accent-primary-hover-css);
+  outline: none; 
 }
 
-/* Headings */
+/* Minimal global heading styling - can be overridden by modules */
 h1, h2, h3, h4, h5, h6 {
-  color: var(--text-headings);
+  color: var(--text-headings-css);
   margin-top: 1em;
   margin-bottom: 0.6em;
   line-height: 1.3;
 }
-h1 { font-size: 2.2em; font-weight: 600; margin-bottom: 0.8em; }
-h2 { font-size: 1.8em; font-weight: 600; }
-h3 { font-size: 1.5em; font-weight: 500; }
-h4 { font-size: 1.25em; font-weight: 500; }
-h5 { font-size: 1.1em; font-weight: 500; }
 
-button, input[type="button"], input[type="submit"] {
-  font-family: var(--font-sans);
-  cursor: pointer;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
-}
+/* Remove .glassmorphic as it's no longer used globally */
 
-/* Improve button focus states if not using Radix exclusively */
-button:focus-visible, 
-input[type="button"]:focus-visible, 
-input[type="submit"]:focus-visible {
-  outline: 2px solid var(--accent-color);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3); /* Softer focus ring, complements outline */
-}
-
-/* Basic Responsive Adjustments */
-@media (max-width: 768px) {
-  body {
-    font-size: 15px; /* Slightly smaller base font on mobile */
-  }
-  #root {
-    padding: 15px 10px;
-  }
-  h1 { font-size: 2em; }
-  h2 { font-size: 1.6em; }
-  h3 { font-size: 1.3em; }
-}
-
-/* Keyframes for Dialog (if needed and not provided by Radix implicitly) */
+/* Keyframes are still useful if Radix components rely on them and don't inject them */
 @keyframes overlayShow {
   from { opacity: 0; }
   to { opacity: 1; }

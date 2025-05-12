@@ -16,9 +16,15 @@
     "@radix-ui/react-progress": "^1.0.3",
     "@radix-ui/react-tabs": "^1.0.4",
     "@supabase/supabase-js": "^2.39.3",
+    "@types/node": "^22.15.17",
+    "@types/pg": "^8.15.1",
+    "airtable": "^0.12.2",
+    "dotenv": "^16.5.0",
+    "pg": "^8.15.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.0"
+    "react-router-dom": "^6.22.0",
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
     "@types/react": "^18.2.55",
@@ -29,7 +35,7 @@
     "eslint": "^8.56.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
-    "typescript": "^5.2.2",
+    "typescript": "^5.8.3",
     "vite": "^5.1.0"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"

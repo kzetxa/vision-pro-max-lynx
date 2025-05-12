@@ -1,28 +1,38 @@
 import Airtable from 'airtable';
-import { Pool } from 'pg'; // Or just Client if you prefer
+// import { Pool } from 'pg'; // Or just Client if you prefer
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path'; // Import path for robust .env loading
 
 // Ensure .env is loaded from the script's execution context or a specified path
-dotenv.config({ path: path.resolve(process.cwd(), '.env') }); 
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 console.log("Script starting...");
 console.log("AIRTABLE_API_KEY:", process.env.AIRTABLE_API_KEY ? 'Loaded' : 'MISSING!');
 console.log("AIRTABLE_BASE_ID:", process.env.AIRTABLE_BASE_ID ? 'Loaded' : 'MISSING!');
-console.log("SUPABASE_DB_CONNECTION_STRING:", process.env.SUPABASE_DB_CONNECTION_STRING ? process.env.SUPABASE_DB_CONNECTION_STRING.substring(0,30) + '...' : 'MISSING!'); // Log only part of the string for security
+// console.log("SUPABASE_DB_CONNECTION_STRING:", process.env.SUPABASE_DB_CONNECTION_STRING ? process.env.SUPABASE_DB_CONNECTION_STRING.substring(0,30) + '...' : 'MISSING!'); // Log only part of the string for security
+console.log("SUPABASE_URL:", process.env.SUPABASE_URL ? 'Loaded' : 'MISSING!');
+console.log("SUPABASE_ANON_KEY:", process.env.SUPABASE_ANON_KEY ? 'Loaded' : 'MISSING!');
+
 
 // ---- Configuration ----
 const airtableApiKey = process.env.AIRTABLE_API_KEY;
 const airtableBaseId = process.env.AIRTABLE_BASE_ID;
-const supabaseConnectionString = process.env.SUPABASE_DB_CONNECTION_STRING;
+// const supabaseConnectionString = process.env.SUPABASE_DB_CONNECTION_STRING;
+const supabaseUrl = process.env.SUPABASE_URL;
+// For scripts like this, a service role key is preferred over an anon key.
+// const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-if (!airtableApiKey || !airtableBaseId || !supabaseConnectionString) {
-	console.error("Missing required environment variables! Check .env file and its location.");
+
+if (!airtableApiKey || !airtableBaseId || !supabaseUrl || !supabaseKey) {
+	console.error("Missing required environment variables! Check .env file. Required: AIRTABLE_API_KEY, AIRTABLE_BASE_ID, SUPABASE_URL, SUPABASE_ANON_KEY.");
 	process.exit(1);
 }
 
 const base = new Airtable({ apiKey: airtableApiKey }).base(airtableBaseId!);
-const pool = new Pool({ connectionString: supabaseConnectionString });
+// const pool = new Pool({ connectionString: supabaseConnectionString });
+const supabase: SupabaseClient = createClient(supabaseUrl!, supabaseKey!);
 
 // ---- Type Definitions (for data mapping) ----
 interface AirtableExerciseFields {
@@ -32,8 +42,8 @@ interface AirtableExerciseFields {
 	"Over Sort Category"?: string;
 	"Explination 1"?: string; // Note: Airtable specific spelling
 	"Explination 2"?: string;
-	"Explination 3"?: string;
-	"Explination 4"?: string;
+	"Explanation 3"?: string; // Corrected spelling
+	"Explanation 4"?: string; // Corrected spelling
 	[key: string]: any; // Index signature to satisfy Airtable's FieldSet constraint
 }
 
@@ -68,17 +78,17 @@ interface AirtableIndividualBlockFields {
 	"reps"?: number;
 	"sets & reps"?: string;
 	"unit"?: string;
-	"special"?: string; 
-	"Exercise Name"?: string[]; 
-	"Block Name"?: string[]; // Changed from "Parent Block Overview Link" to "Block Name"
+	"special"?: string;
+	"Exercise Name"?: string[];
+	"Block name"?: string[]; // Corrected from "Block Name"
 	[key: string]: any;
 }
 
 interface SupabaseIndividualBlock {
 	airtable_record_id: string;
-	block_overview_id?: string; 
+	block_overview_id?: string;
 	airtable_block_overview_record_id?: string;
-	exercise_id?: string;       
+	exercise_id?: string;
 	airtable_exercise_record_id?: string;
 	sets?: number;
 	reps?: number;
@@ -134,56 +144,77 @@ async function upsertRecords(
 		return;
 	}
 
-	const client = await pool.connect();
+	// const client = await pool.connect(); // Not needed with supabase-js
 	try {
-		await client.query('BEGIN');
+		// await client.query('BEGIN'); // Supabase upsert handles transactions implicitly for the operation
 
-		for (const record of records) {
-			const values = columns.map(col => record[col]);
-			const valuePlaceholders = columns.map((_, i) => `$${i + 1}`).join(', ');
+		// Supabase client's upsert method
+		// The `records` should be an array of objects matching Supabase table structure.
+		// `conflictColumn` is used in the `onConflict` option.
+		const { data, error } = await supabase
+			.from(tableName)
+			.upsert(records, {
+				onConflict: conflictColumn,
+				// returning: 'minimal', // Supabase default is 'representation', which returns the upserted records. 'minimal' returns nothing.
+			});
 
-			const updateSet = columns
-				.filter(col => col !== conflictColumn) // Don't update the conflict column itself
-				.map(col => `${col} = EXCLUDED.${col}`)
-				.join(', ');
-
-			const queryText = `
-                INSERT INTO public.${tableName} (${columns.join(', ')})
-                VALUES (${valuePlaceholders})
-                ON CONFLICT (${conflictColumn}) DO UPDATE
-                SET ${updateSet};
-            `;
-			await client.query(queryText, values);
+		if (error) {
+			console.error(`Error upserting into ${tableName}:`, error);
+			// await client.query('ROLLBACK'); // Handled by Supabase or not applicable
+			throw error; // Re-throw to stop the script or handle higher up
 		}
 
-		await client.query('COMMIT');
+		// await client.query('COMMIT');
 		console.log(`Successfully upserted ${records.length} records into ${tableName}.`);
 	} catch (error) {
-		await client.query('ROLLBACK');
-		console.error(`Error upserting into ${tableName}:`, error);
-		throw error; // Re-throw to stop the script or handle higher up
+		// If error was not thrown by supabase client already, log it
+		// if (!(error instanceof Error && 'message' in error && error.message.includes('PostgrestError'))) {
+		//  console.error(`Unhandled error during upsert into ${tableName}:`, error);
+		// }
+		// Rollback is not explicitly managed here with Supabase client for single upsert operations.
+		// The operation either succeeds or fails.
+		throw error; // Re-throw
 	} finally {
-		client.release();
+		// client.release(); // Not needed
 	}
 }
 
 async function buildIdMap(tableName: string, airtableIdColumn: string = 'airtable_record_id', supabaseIdColumn: string = 'id'): Promise<Map<string, string>> {
-	console.log(`[buildIdMap] Building ID map for ${tableName}. Attempting to connect...`);
+	console.log(`[buildIdMap] Building ID map for ${tableName}.`);
 	const idMap = new Map<string, string>();
-	let client;
+	// let client; // Not needed
 	try {
-		client = await pool.connect();
-		console.log(`[buildIdMap] Connected to DB for table ${tableName}. Fetching IDs...`);
-		const res = await client.query(`SELECT ${airtableIdColumn}, ${supabaseIdColumn} FROM public.${tableName}`);
-		res.rows.forEach(row => {
-			if (row[airtableIdColumn] && row[supabaseIdColumn]) {
-				idMap.set(row[airtableIdColumn], row[supabaseIdColumn]);
-			}
-		});
+		// client = await pool.connect(); // Not needed
+		// console.log(`[buildIdMap] Connected to DB for table ${tableName}. Fetching IDs...`); 
+		// const res = await client.query(`SELECT ${airtableIdColumn}, ${supabaseIdColumn} FROM public.${tableName}`);
+
+		const { data, error } = await supabase
+			.from(tableName)
+			.select(`${supabaseIdColumn}, ${airtableIdColumn}`);
+
+		if (error) {
+			console.error(`[buildIdMap] Error fetching IDs for ${tableName}:`, error);
+			throw error; // Propagate the error
+		}
+
+		if (data) {
+			data.forEach((row: any) => { // Add :any type for row if Supabase types are not explicitly defined here
+				if (row[airtableIdColumn] && row[supabaseIdColumn]) {
+					idMap.set(row[airtableIdColumn], row[supabaseIdColumn]);
+				}
+			});
+		}
+
 	} catch (error) {
-		console.error(`[buildIdMap] Error building ID map for ${tableName}:`, error);
+		// Error already logged or will be logged by the caller if re-thrown
+		// console.error(`[buildIdMap] Error building ID map for ${tableName}:`, error);
+		// Re-throw if not already a Supabase error, or let it propagate
+		if (!(error instanceof Error && 'message' in error && (error.message.includes('PostgrestError') || error.message.includes('Error fetching IDs')))) {
+			console.error(`[buildIdMap] Unhandled error building ID map for ${tableName}:`, error);
+		}
+		throw error; // Ensure errors are propagated
 	} finally {
-		if (client) client.release();
+		// if (client) client.release(); // Not needed
 	}
 	console.log(`[buildIdMap] Finished for ${tableName}. Found ${idMap.size} entries.`);
 	return idMap;
@@ -198,7 +229,7 @@ async function syncExerciseLibrary() {
 	try {
 		await base('Exercise Library').select({
 			// Adjust fields if needed, or fetch all relevant ones
-			fields: ["Current Name", "Vimeo Code", "Public Name (from Equipment)", "Over Sort Category", "Explination 1", "Explination 2", "Explination 3", "Explination 4"]
+			fields: ["Current Name", "Vimeo Code", "Public Name (from Equipment)", "Over Sort Category", "Explination 1", "Explination 2", "Explanation 3", "Explanation 4"]
 		}).eachPage((pageRecords, fetchNextPage) => {
 			pageRecords.forEach(record => airtableRecords.push(record as any)); // Cast needed if fields are strictly typed
 			fetchNextPage();
@@ -215,8 +246,8 @@ async function syncExerciseLibrary() {
 			over_sort_category: record.fields["Over Sort Category"],
 			explanation_1: record.fields["Explination 1"],
 			explanation_2: record.fields["Explination 2"],
-			explanation_3: record.fields["Explination 3"],
-			explanation_4: record.fields["Explination 4"],
+			explanation_3: record.fields["Explanation 3"],
+			explanation_4: record.fields["Explanation 4"],
 		}));
 
 		const columns = [
@@ -237,7 +268,7 @@ async function syncBlocksOverview() {
 	const airtableRecords: Airtable.Record<AirtableBlocksOverviewFields>[] = [];
 
 	try {
-		await base('Blocks Overview').select({ 
+		await base('Blocks Overview').select({
 			fields: ["Public Name", "Rest between Sets", "Intensity"]
 		}).eachPage((pageRecords, fetchNextPage) => {
 			pageRecords.forEach(record => airtableRecords.push(record as any));
@@ -253,7 +284,7 @@ async function syncBlocksOverview() {
 			rest_between_sets: record.fields["Rest between Sets"],
 			intensity: record.fields["Intensity"],
 		}));
-		
+
 		const columns = [
 			'airtable_record_id', 'public_name', 'rest_between_sets', 'intensity'
 		];
@@ -274,8 +305,8 @@ async function syncIndividualBlocks(exerciseIdMap: Map<string, string>, blockOve
 	const airtableRecords: Airtable.Record<AirtableIndividualBlockFields>[] = [];
 
 	try {
-		await base('individual blocks').select({ 
-			fields: ["sets", "reps", "sets & reps", "unit", "special", "Exercise Name", "Block Name"]
+		await base('individual blocks').select({
+			fields: ["sets", "reps", "sets & reps", "unit", "special", "Exercise Name", "Block name"]
 		}).eachPage((pageRecords, fetchNextPage) => {
 			pageRecords.forEach(record => airtableRecords.push(record as any));
 			fetchNextPage();
@@ -286,16 +317,16 @@ async function syncIndividualBlocks(exerciseIdMap: Map<string, string>, blockOve
 
 		const supabaseIndividualBlocks: SupabaseIndividualBlock[] = airtableRecords.map(record => {
 			const airtableExerciseId = record.fields["Exercise Name"]?.[0];
-			const airtableParentBlockOverviewId = record.fields["Block Name"]?.[0]; 
+			const airtableParentBlockOverviewId = record.fields["Block name"]?.[0];
 
 			const supabaseExerciseUUID = airtableExerciseId ? exerciseIdMap.get(airtableExerciseId) : undefined;
 			const supabaseBlockOverviewUUID = airtableParentBlockOverviewId ? blockOverviewIdMap.get(airtableParentBlockOverviewId) : undefined;
-			
+
 			if (airtableExerciseId && !supabaseExerciseUUID) {
 				console.warn(`[Individual Blocks] Could not find Supabase UUID for Airtable Exercise ID: ${airtableExerciseId} in record ${record.id}`);
 			}
 			if (airtableParentBlockOverviewId && !supabaseBlockOverviewUUID) {
-				console.warn(`[Individual Blocks] Could not find Supabase UUID for Airtable Parent Block Overview ID: ${airtableParentBlockOverviewId} (from field "Block Name") in record ${record.id}`);
+				console.warn(`[Individual Blocks] Could not find Supabase UUID for Airtable Parent Block Overview ID: ${airtableParentBlockOverviewId} (from field "Block name") in record ${record.id}`);
 			}
 
 			return {
@@ -311,7 +342,7 @@ async function syncIndividualBlocks(exerciseIdMap: Map<string, string>, blockOve
 				special_instructions: record.fields["special"],
 			};
 		});
-		
+
 		const columns = [
 			'airtable_record_id', 'block_overview_id', 'airtable_block_overview_record_id',
 			'exercise_id', 'airtable_exercise_record_id', 'sets', 'reps',
@@ -358,7 +389,7 @@ async function syncWorkouts(blockOverviewIdMap: Map<string, string>) {
 				}
 				return supabaseUUID;
 			};
-			
+
 			return {
 				airtable_record_id: record.id,
 				preview_video_url: record.fields["Preview Video URL"],
@@ -379,7 +410,7 @@ async function syncWorkouts(blockOverviewIdMap: Map<string, string>) {
 				airtable_block_5_record_id: record.fields["Block 5"]?.[0],
 			};
 		});
-		
+
 		const columns = [
 			'airtable_record_id', 'preview_video_url', 'header_image_url', 'public_workout_title',
 			'focus_area', 'level', 'duration',
@@ -402,18 +433,25 @@ async function main() {
 		// Build ID maps once where possible
 		const exerciseIdMap = await buildIdMap('exercise_library');
 		const blockOverviewIdMap = await buildIdMap('blocks_overview');
-		
+
 		// Sync in order of dependency
-		await syncExerciseLibrary(); 
-		await syncBlocksOverview(); 
-		await syncIndividualBlocks(exerciseIdMap, blockOverviewIdMap); 
-		await syncWorkouts(blockOverviewIdMap); 
+		await syncExerciseLibrary();
+		await syncBlocksOverview();
+		await syncIndividualBlocks(exerciseIdMap, blockOverviewIdMap);
+		await syncWorkouts(blockOverviewIdMap);
 
 		console.log("Sync process completed successfully.");
 	} catch (error) {
-		console.error("Main sync process failed overall:", error);
+		console.error("Main sync process failed overall:");
+        if (error instanceof Error) {
+            console.error("Error Name:", error.name);
+            console.error("Error Message:", error.message);
+            console.error("Error Stack:", error.stack);
+        } else {
+            console.error("Raw Error:", error);
+        }
 	} finally {
-		await pool.end(); // Close the connection pool
+		// await pool.end(); // Close the connection pool // Not needed for supabase-js client
 	}
 }
 

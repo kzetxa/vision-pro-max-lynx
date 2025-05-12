@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
-import WorkoutPage from './pages/Workout';
+import WorkoutPage from './pages/WorkoutPage';
 
 const App: React.FC = () => {
   return (

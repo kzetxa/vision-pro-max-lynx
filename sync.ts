@@ -1,6 +1,5 @@
 import Airtable from 'airtable';
-// import { Pool } from 'pg'; // Or just Client if you prefer
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Pool } from 'pg'; // Or just Client if you prefer
 import dotenv from 'dotenv';
 import path from 'path'; // Import path for robust .env loading
 
@@ -10,28 +9,20 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 console.log("Script starting...");
 console.log("AIRTABLE_API_KEY:", process.env.AIRTABLE_API_KEY ? 'Loaded' : 'MISSING!');
 console.log("AIRTABLE_BASE_ID:", process.env.AIRTABLE_BASE_ID ? 'Loaded' : 'MISSING!');
-// console.log("SUPABASE_DB_CONNECTION_STRING:", process.env.SUPABASE_DB_CONNECTION_STRING ? process.env.SUPABASE_DB_CONNECTION_STRING.substring(0,30) + '...' : 'MISSING!'); // Log only part of the string for security
-console.log("SUPABASE_URL:", process.env.SUPABASE_URL ? 'Loaded' : 'MISSING!');
-console.log("SUPABASE_SERVICE_KEY:", process.env.SUPABASE_SERVICE_KEY ? 'Loaded (recommended)' : (process.env.SUPABASE_ANON_KEY ? 'Loaded (anon key)' : 'MISSING!'));
-
+console.log("SUPABASE_DB_CONNECTION_STRING:", process.env.SUPABASE_DB_CONNECTION_STRING ? process.env.SUPABASE_DB_CONNECTION_STRING.substring(0,30) + '...' : 'MISSING!'); // Log only part of the string for security
 
 // ---- Configuration ----
 const airtableApiKey = process.env.AIRTABLE_API_KEY;
 const airtableBaseId = process.env.AIRTABLE_BASE_ID;
-// const supabaseConnectionString = process.env.SUPABASE_DB_CONNECTION_STRING;
-const supabaseUrl = process.env.SUPABASE_URL;
-// For scripts like this, a service role key is preferred over an anon key.
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
+const supabaseConnectionString = process.env.SUPABASE_DB_CONNECTION_STRING;
 
-
-if (!airtableApiKey || !airtableBaseId || !supabaseUrl || !supabaseKey) {
-	console.error("Missing required environment variables! Check .env file and its location (needs SUPABASE_URL and SUPABASE_SERVICE_KEY or SUPABASE_ANON_KEY).");
+if (!airtableApiKey || !airtableBaseId || !supabaseConnectionString) {
+	console.error("Missing required environment variables! Check .env file and its location.");
 	process.exit(1);
 }
 
 const base = new Airtable({ apiKey: airtableApiKey }).base(airtableBaseId!);
-// const pool = new Pool({ connectionString: supabaseConnectionString });
-const supabase: SupabaseClient = createClient(supabaseUrl!, supabaseKey!);
+const pool = new Pool({ connectionString: supabaseConnectionString });
 
 // ---- Type Definitions (for data mapping) ----
 interface AirtableExerciseFields {
@@ -143,77 +134,56 @@ async function upsertRecords(
 		return;
 	}
 
-	// const client = await pool.connect(); // Not needed with supabase-js
+	const client = await pool.connect();
 	try {
-		// await client.query('BEGIN'); // Supabase upsert handles transactions implicitly for the operation
+		await client.query('BEGIN');
 
-		// Supabase client's upsert method
-		// The `records` should be an array of objects matching Supabase table structure.
-		// `conflictColumn` is used in the `onConflict` option.
-		const { data, error } = await supabase
-			.from(tableName)
-			.upsert(records, {
-				onConflict: conflictColumn,
-				// returning: 'minimal', // Supabase default is 'representation', which returns the upserted records. 'minimal' returns nothing.
-			});
+		for (const record of records) {
+			const values = columns.map(col => record[col]);
+			const valuePlaceholders = columns.map((_, i) => `$${i + 1}`).join(', ');
 
-		if (error) {
-			console.error(`Error upserting into ${tableName}:`, error);
-			// await client.query('ROLLBACK'); // Handled by Supabase or not applicable
-			throw error; // Re-throw to stop the script or handle higher up
+			const updateSet = columns
+				.filter(col => col !== conflictColumn) // Don't update the conflict column itself
+				.map(col => `${col} = EXCLUDED.${col}`)
+				.join(', ');
+
+			const queryText = `
+                INSERT INTO public.${tableName} (${columns.join(', ')})
+                VALUES (${valuePlaceholders})
+                ON CONFLICT (${conflictColumn}) DO UPDATE
+                SET ${updateSet};
+            `;
+			await client.query(queryText, values);
 		}
 
-		// await client.query('COMMIT');
+		await client.query('COMMIT');
 		console.log(`Successfully upserted ${records.length} records into ${tableName}.`);
 	} catch (error) {
-		// If error was not thrown by supabase client already, log it
-		// if (!(error instanceof Error && 'message' in error && error.message.includes('PostgrestError'))) {
-		//  console.error(`Unhandled error during upsert into ${tableName}:`, error);
-		// }
-		// Rollback is not explicitly managed here with Supabase client for single upsert operations.
-		// The operation either succeeds or fails.
-		throw error; // Re-throw
+		await client.query('ROLLBACK');
+		console.error(`Error upserting into ${tableName}:`, error);
+		throw error; // Re-throw to stop the script or handle higher up
 	} finally {
-		// client.release(); // Not needed
+		client.release();
 	}
 }
 
 async function buildIdMap(tableName: string, airtableIdColumn: string = 'airtable_record_id', supabaseIdColumn: string = 'id'): Promise<Map<string, string>> {
-	console.log(`[buildIdMap] Building ID map for ${tableName}.`);
+	console.log(`[buildIdMap] Building ID map for ${tableName}. Attempting to connect...`);
 	const idMap = new Map<string, string>();
-	// let client; // Not needed
+	let client;
 	try {
-		// client = await pool.connect(); // Not needed
-		// console.log(`[buildIdMap] Connected to DB for table ${tableName}. Fetching IDs...`); 
-		// const res = await client.query(`SELECT ${airtableIdColumn}, ${supabaseIdColumn} FROM public.${tableName}`);
-
-		const { data, error } = await supabase
-			.from(tableName)
-			.select(`${supabaseIdColumn}, ${airtableIdColumn}`);
-
-		if (error) {
-			console.error(`[buildIdMap] Error fetching IDs for ${tableName}:`, error);
-			throw error; // Propagate the error
-		}
-
-		if (data) {
-			data.forEach((row: any) => { // Add :any type for row if Supabase types are not explicitly defined here
-				if (row[airtableIdColumn] && row[supabaseIdColumn]) {
-					idMap.set(row[airtableIdColumn], row[supabaseIdColumn]);
-				}
-			});
-		}
-
+		client = await pool.connect();
+		console.log(`[buildIdMap] Connected to DB for table ${tableName}. Fetching IDs...`);
+		const res = await client.query(`SELECT ${airtableIdColumn}, ${supabaseIdColumn} FROM public.${tableName}`);
+		res.rows.forEach(row => {
+			if (row[airtableIdColumn] && row[supabaseIdColumn]) {
+				idMap.set(row[airtableIdColumn], row[supabaseIdColumn]);
+			}
+		});
 	} catch (error) {
-		// Error already logged or will be logged by the caller if re-thrown
-		// console.error(`[buildIdMap] Error building ID map for ${tableName}:`, error);
-		// Re-throw if not already a Supabase error, or let it propagate
-		if (!(error instanceof Error && 'message' in error && (error.message.includes('PostgrestError') || error.message.includes('Error fetching IDs')))) {
-            console.error(`[buildIdMap] Unhandled error building ID map for ${tableName}:`, error);
-        }
-		throw error; // Ensure errors are propagated
+		console.error(`[buildIdMap] Error building ID map for ${tableName}:`, error);
 	} finally {
-		// if (client) client.release(); // Not needed
+		if (client) client.release();
 	}
 	console.log(`[buildIdMap] Finished for ${tableName}. Found ${idMap.size} entries.`);
 	return idMap;
@@ -443,7 +413,7 @@ async function main() {
 	} catch (error) {
 		console.error("Main sync process failed overall:", error);
 	} finally {
-		// await pool.end(); // Close the connection pool // Not needed for supabase-js client
+		await pool.end(); // Close the connection pool
 	}
 }
 

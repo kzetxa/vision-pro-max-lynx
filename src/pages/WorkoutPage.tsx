@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 import BlockViewer from '../components/BlockViewer';
 // import CompletionChart from '../components/CompletionChart'; // Keep for later
 import { fetchWorkoutDetailsById } from '../lib/api';
@@ -7,17 +7,24 @@ import type { SupabasePopulatedWorkout } from '../lib/types';
 import * as RadixDialog from '@radix-ui/react-dialog';
 import { Cross2Icon } from '@radix-ui/react-icons';
 import styles from './WorkoutPage.module.scss'; // Import styles
+import {
+  loadWorkoutProgressFromStorage,
+  saveExerciseProgressToStorage, // We'll use this in ExerciseTile, but good to have it imported if needed here later
+  ExerciseProgress,
+  clearWorkoutProgressInStorage
+} from '../lib/localStorage';
 
 const WorkoutPage: React.FC = () => {
   const { workoutId } = useParams<{ workoutId: string }>();
-  const [searchParams] = useSearchParams();
-  const clientId = searchParams.get('clientid');
+  const clientId = "test"; // Force client ID to "test"
 
   const [workoutData, setWorkoutData] = useState<SupabasePopulatedWorkout | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showChart, setShowChart] = useState(false); // Keep for later
   const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false);
+  // State to hold progress for all exercises in this workout
+  const [allExerciseProgress, setAllExerciseProgress] = useState<{[blockExerciseId: string]: ExerciseProgress}>({}); 
 
   useEffect(() => {
     if (!workoutId) {
@@ -26,13 +33,18 @@ const WorkoutPage: React.FC = () => {
       return;
     }
 
-    const loadWorkout = async () => {
+    const loadData = async () => {
       setLoading(true);
       setError(null);
       try {
         const data = await fetchWorkoutDetailsById(workoutId);
         if (data) {
           setWorkoutData(data);
+          // Once workout data is loaded, load its progress
+          if (clientId) { // Ensure clientId is available
+            const progress = loadWorkoutProgressFromStorage(workoutId, clientId);
+            setAllExerciseProgress(progress);
+          }
         } else {
           setError('Workout not found.');
         }
@@ -42,14 +54,26 @@ const WorkoutPage: React.FC = () => {
       }
       setLoading(false);
     };
+    loadData();
+  }, [workoutId]); // clientId is stable, so not needed as dependency
 
-    loadWorkout();
-  }, [workoutId]);
+  const handleExerciseCompleteInPage = useCallback((blockExerciseId: string) => {
+    console.log(`Exercise ${blockExerciseId} completed in WorkoutPage for workout ${workoutId}, client ${clientId}`);
+    // Here you could check if ALL exercises in workoutData.blocks are complete
+    // and then perhaps prompt the user or auto-mark the workout as finished.
+    // For now, we just log it and ensure the individual exercise progress is saved by ExerciseTile.
+  }, [workoutId, clientId]);
 
   const handleFinishWorkout = () => {
-    console.log("Finish workout clicked for:", workoutData?.id);
+    console.log(`Finish workout button clicked for: ${workoutId}, client: ${clientId}`);
+    // Potentially clear progress when workout is manually marked as finished
+    if (workoutId && clientId) {
+        clearWorkoutProgressInStorage(workoutId, clientId);
+        // Optionally, re-fetch or clear local state to reflect this on the UI immediately
+        setAllExerciseProgress({}); 
+        alert("Workout progress cleared!");
+    }
     setIsFinishDialogOpen(false);
-    // Potentially set showChart(true) here later
   };
 
   if (loading) {
@@ -76,7 +100,15 @@ const WorkoutPage: React.FC = () => {
           <h3 className={styles.blocksHeader}>Workout Blocks:</h3>
           {workoutData.blocks && workoutData.blocks.length > 0 ? (
             workoutData.blocks.map((block, index) => (
-              <BlockViewer key={block.id} block={block} blockNumber={index + 1} />
+              <BlockViewer 
+                key={block.id} 
+                block={block} 
+                blockNumber={index + 1} 
+                workoutId={workoutId!} // workoutId is guaranteed to be present here
+                clientId={clientId} 
+                exerciseProgressMap={allExerciseProgress} // Pass the whole map
+                onExerciseComplete={handleExerciseCompleteInPage} // Pass down callback
+              />
             ))
           ) : (
             <p className={styles.statusMessage}>No blocks found for this workout.</p>
@@ -84,17 +116,16 @@ const WorkoutPage: React.FC = () => {
           
           <RadixDialog.Root open={isFinishDialogOpen} onOpenChange={setIsFinishDialogOpen}>
             <RadixDialog.Trigger asChild>
-              {/* Using a styled button class here */}
               <button className={`${styles.dialogButton} ${styles.dialogButtonPrimary}`} style={{margin: '2rem auto', display: 'block'}}>
-                Finish Workout
+                Finish Workout (Clear Progress)
               </button>
             </RadixDialog.Trigger>
             <RadixDialog.Portal>
               <RadixDialog.Overlay className={styles.dialogOverlay} />
               <RadixDialog.Content className={styles.dialogContent}>
-                <RadixDialog.Title className={styles.dialogTitle}>Confirm Finish</RadixDialog.Title>
+                <RadixDialog.Title className={styles.dialogTitle}>Confirm Finish & Clear</RadixDialog.Title>
                 <RadixDialog.Description className={styles.dialogDescription}>
-                  Are you sure you want to mark this workout as complete?
+                  Are you sure? This will mark the workout as finished and clear your current progress for it.
                 </RadixDialog.Description>
                 <div className={styles.dialogActions}>
                   <RadixDialog.Close asChild>
@@ -103,10 +134,10 @@ const WorkoutPage: React.FC = () => {
                     </button>
                   </RadixDialog.Close>
                   <button 
-                    onClick={handleFinishWorkout}
+                    onClick={handleFinishWorkout} 
                     className={`${styles.dialogButton} ${styles.dialogButtonPrimary}`}
                   >
-                    Yes, Finish
+                    Yes, Finish & Clear
                   </button>
                 </div>
                 <RadixDialog.Close asChild>

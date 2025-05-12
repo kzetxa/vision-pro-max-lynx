@@ -71,6 +71,31 @@ $font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxy
   'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
   sans-serif;
 
+// --- Badge Variant Colors (Matte Palette) ---
+$badge-bg-default: $bg-tertiary; 
+$badge-text-default: $text-secondary;
+$badge-border-default: $border-primary;
+
+// Matte Blue (Info)
+$badge-bg-info: #2a3a59; // Desaturated blue
+$badge-text-info: #c0d0ff; // Lighter blue text
+$badge-border-info: #3a4a6f;
+
+// Matte Green (Success)
+$badge-bg-success: #2f4d3d; // Desaturated green
+$badge-text-success: #b0e0c0; // Lighter green text
+$badge-border-success: #405d4d;
+
+// Matte Yellow/Orange (Warning)
+$badge-bg-warning: #59472a; // Desaturated orange/brown
+$badge-text-warning: #ffdca0; // Lighter yellow/orange text
+$badge-border-warning: #6f573a;
+
+// Matte Red (Error)
+$badge-bg-error: #592a2a; // Desaturated red
+$badge-text-error: #ffc0c0; // Lighter red text
+$badge-border-error: #6f3a3a;
+
 // --- Exports (Allow importing variables into JS/TS if needed via :export block) ---
 // :export {
 //   colorPrimary: $primary-color;

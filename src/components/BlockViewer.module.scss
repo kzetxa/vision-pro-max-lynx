@@ -34,4 +34,12 @@
   color: theme.$text-secondary;
   text-align: center;
   padding: theme.$spacing-md 0;
+}
+
+// New styles for info badges
+.infoBadgesContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: theme.$spacing-sm;
+  margin-bottom: theme.$spacing-md;
 } 

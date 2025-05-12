@@ -1,0 +1,61 @@
+@use '../styles/theme.module.scss' as theme;
+
+// Base styles for all badges
+.badge {
+  display: inline-block;
+  // Use default theme vars for base styling
+  background-color: theme.$badge-bg-default;
+  color: theme.$badge-text-default;
+  border: theme.$border-width-thin solid theme.$badge-border-default;
+  
+  padding: theme.$spacing-xs theme.$spacing-sm;
+  border-radius: theme.$border-radius-lg; 
+  font-size: 0.8em;
+  font-weight: 500;
+  line-height: 1.2;
+  // Add transition for potential color changes
+  transition: background-color theme.$transition-fast, color theme.$transition-fast, border-color theme.$transition-fast;
+}
+
+// Variant Modifiers
+.info {
+  background-color: theme.$badge-bg-info;
+  color: theme.$badge-text-info;
+  border-color: theme.$badge-border-info;
+}
+
+.success {
+  background-color: theme.$badge-bg-success;
+  color: theme.$badge-text-success;
+  border-color: theme.$badge-border-success;
+}
+
+.warning {
+  background-color: theme.$badge-bg-warning;
+  color: theme.$badge-text-warning;
+  border-color: theme.$badge-border-warning;
+}
+
+.error {
+  background-color: theme.$badge-bg-error;
+  color: theme.$badge-text-error;
+  border-color: theme.$badge-border-error;
+}
+
+// Style for the label *within* the badge
+.label {
+  // Use primary text color for better contrast within default/colored badges
+  color: theme.$text-primary; 
+  margin-right: theme.$spacing-xs;
+  opacity: 0.8; // Slightly dim the label itself
+}
+
+// Container style - keep this in parent components for layout control
+/*
+.infoBadgesContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: theme.$spacing-sm;
+  margin-bottom: theme.$spacing-md;
+}
+*/ 

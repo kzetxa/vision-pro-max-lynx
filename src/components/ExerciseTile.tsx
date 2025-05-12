@@ -8,18 +8,34 @@ import styles from './ExerciseTile.module.scss'; // Import styles
 import { parseSetsAndReps } from '../lib/utils'; // Import the parser
 // import * as Checkbox from '@radix-ui/react-checkbox'; // Will add later
 // import { CheckIcon } from '@radix-ui/react-icons'; // Will add later for checkbox
+// Import storage functions and type
+import {
+  saveExerciseProgressToStorage,
+  ExerciseProgress 
+} from '../lib/localStorage'; 
+import Badge from './Badge'; // Import Badge component
 
 interface ExerciseTileProps {
   // exercise: Exercise; // Old Airtable Type
   blockExercise: SupabaseBlockExercise; // New Supabase Type
+  workoutId: string; // Added
+  clientId: string;  // Added
+  initialProgress?: ExerciseProgress; // Added optional initial progress
   // onCompletionChange?: (exerciseId: string, setId: string | number, completed: boolean) => void; // Will need update for Supabase IDs
   // Add a callback for when the entire exercise is completed
   onExerciseComplete?: (blockExerciseId: string) => void;
 }
 
-const ExerciseTile: React.FC<ExerciseTileProps> = ({ blockExercise, onExerciseComplete }) => {
+const ExerciseTile: React.FC<ExerciseTileProps> = ({ 
+  blockExercise, 
+  workoutId, 
+  clientId, 
+  initialProgress, 
+  onExerciseComplete 
+}) => {
   // Extract exercise details from the nested exercise object
   const exercise: SupabaseExercise | null = blockExercise.exercise; 
+  const blockExerciseId = blockExercise.id;
 
   // Parse sets and reps using the utility function
   // useMemo will ensure this parsing only happens if blockExercise changes
@@ -27,13 +43,13 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({ blockExercise, onExerciseCo
     parseSetsAndReps(blockExercise)
   , [blockExercise]);
 
-  const [currentSet, setCurrentSet] = useState<number>(1);
-  // State for reps completed in the *current* set
+  // Load initial state from props or default
+  const [currentSet, setCurrentSet] = useState<number>(initialProgress?.currentSet ?? 1);
+  const [isExerciseDone, setIsExerciseDone] = useState<boolean>(initialProgress?.isExerciseDone ?? false);
+  // RepsCompleted state is transient for the current set, doesn't need loading/saving directly here
   const [repsCompleted, setRepsCompleted] = useState<boolean[]>(() => 
     Array(parsedRepCount).fill(false)
   );
-  // Add state to track if the whole exercise is done
-  const [isExerciseDone, setIsExerciseDone] = useState<boolean>(false);
 
   // Effect to reset repsCompleted when parsedRepCount or currentSet changes
   useEffect(() => {
@@ -42,6 +58,17 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({ blockExercise, onExerciseCo
       setRepsCompleted(Array(parsedRepCount).fill(false));
     }
   }, [parsedRepCount, currentSet, isExerciseDone]); 
+
+  // Effect to save progress whenever currentSet or isExerciseDone changes
+  useEffect(() => {
+    // Don't save initial default state before any interaction potentially happens
+    // Or, alternatively, load progress in WorkoutPage and only pass it down if it exists
+    // For simplicity now, we save whenever these change after initial load.
+    if (workoutId && clientId && blockExerciseId) {
+        const progress: ExerciseProgress = { currentSet, isExerciseDone };
+        saveExerciseProgressToStorage(workoutId, clientId, blockExerciseId, progress);
+    }
+  }, [currentSet, isExerciseDone, workoutId, clientId, blockExerciseId]);
 
   if (!exercise) {
     // Handle case where exercise data might be missing (though unlikely with the current query)
@@ -56,7 +83,7 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({ blockExercise, onExerciseCo
 
   // Use Supabase field names from the exercise object
   const exerciseName = exercise.current_name || 'Unnamed Exercise';
-  const muscleWorked = exercise.equipment_public_name || 'N/A'; // Assuming this is the primary muscle field now?
+  const muscleWorked = exercise.equipment_public_name || 'N/A'; // TODO: Revisit if this is the correct field
   const vimeoCode = exercise.vimeo_code;
   // Use Supabase explanation fields
   const explanation1 = exercise.explanation_1;
@@ -90,23 +117,53 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({ blockExercise, onExerciseCo
         console.log(`All sets complete for ${exercise?.current_name}!`);
         setIsExerciseDone(true);
         // Call the completion callback if provided
-        onExerciseComplete?.(blockExercise.id);
+        onExerciseComplete?.(blockExerciseId);
       }
     }
   };
+
+  // Helper to parse muscle groups if it's a stringified array
+  const getDisplayableMuscleGroups = (muscleData: string | null | undefined): string => {
+    if (!muscleData) return '';
+    try {
+      if (muscleData.startsWith('[') && muscleData.endsWith(']')) {
+        const parsed = JSON.parse(muscleData);
+        return Array.isArray(parsed) ? parsed.join(', ') : muscleData;
+      }
+    } catch (e) {
+      // If parsing fails, return the original string
+      console.error("Failed to parse muscle data:", e);
+      return muscleData;
+    }
+    return muscleData;
+  };
+
+  const muscleDisplay = getDisplayableMuscleGroups(exercise.over_sort_category);
 
   return (
     // Add a class if the exercise is done for potential styling
     <div className={`${styles.exerciseTile} ${isExerciseDone ? styles.exerciseDone : ''}`}>
       <h5 className={styles.title}>{exerciseName}</h5>
-      {/* Display Sets/Reps/Unit/Instructions if available */}
-      <div className={styles.details}>
-          {setsRepsTextForDisplay && <div>Sets/Reps: {setsRepsTextForDisplay}</div>}
-          {/* Optionally display parsed counts: <div>Parsed: {parsedSetCount} sets of {parsedRepCount} reps</div> */}
-          {unit && <div>Unit: {unit}</div>}
-          {muscleWorked !== 'N/A' && <div>Muscle: {muscleWorked}</div>}
-          {specialInstructions && <div>Notes: {specialInstructions}</div>}
+      
+      {/* Details with Badges */} 
+      <div className={styles.infoBadgesContainer}>
+        {setsRepsTextForDisplay && <Badge label="Sets/Reps:" value={setsRepsTextForDisplay} />}
+        {unit && <Badge label="Unit:" value={unit} />}
+        {muscleWorked !== 'N/A' && <Badge label="Muscle:" value={muscleWorked} />}
+        {muscleDisplay && (
+          <Badge label="Muscle:" value={muscleDisplay} className={styles.muscleBadge} />
+        )}
+        {exercise.equipment_public_name && (
+          <Badge label="Equipment:" value={exercise.equipment_public_name} className={styles.equipmentBadge} />
+        )}
       </div>
+      
+      {/* Optional Special Instructions (not a badge) */}
+      {specialInstructions && (
+        <p className={styles.details}> 
+          <strong>Notes:</strong> {specialInstructions}
+        </p>
+      )}
       
       {(vimeoCode || explanation1) && (
         <RadixTabs.Root defaultValue={activeTab} onValueChange={setActiveTab}>
@@ -161,7 +218,7 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({ blockExercise, onExerciseCo
         {!isExerciseDone && repsCompleted.map((isCompleted, repIndex) => (
           <div key={`rep-${repIndex}`} className={styles.setRow}>
             <RadixCheckbox.Root
-              id={`rep-${blockExercise.id}-${currentSet}-${repIndex}`}
+              id={`rep-${blockExerciseId}-${currentSet}-${repIndex}`}
               checked={isCompleted}
               onCheckedChange={() => handleRepCompletion(repIndex)}
               className={styles.checkboxRoot}
@@ -171,7 +228,7 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({ blockExercise, onExerciseCo
                 <CheckIcon />
               </RadixCheckbox.Indicator>
             </RadixCheckbox.Root>
-            <label htmlFor={`rep-${blockExercise.id}-${currentSet}-${repIndex}`} className={styles.setLabel}>
+            <label htmlFor={`rep-${blockExerciseId}-${currentSet}-${repIndex}`} className={styles.setLabel}>
               Rep {repIndex + 1}
             </label>
           </div>

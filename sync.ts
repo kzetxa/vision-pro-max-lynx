@@ -430,15 +430,29 @@ async function syncWorkouts(blockOverviewIdMap: Map<string, string>) {
 
 async function main() {
 	try {
-		// Build ID maps once where possible
+		// Sync tables first
+		console.log("Starting sync for exercise_library...");
+		await syncExerciseLibrary();
+		console.log("Finished sync for exercise_library.");
+
+		console.log("Starting sync for blocks_overview...");
+		await syncBlocksOverview();
+		console.log("Finished sync for blocks_overview.");
+
+		// Build ID maps *after* syncing the base tables
+		console.log("Building ID maps...");
 		const exerciseIdMap = await buildIdMap('exercise_library');
 		const blockOverviewIdMap = await buildIdMap('blocks_overview');
+		console.log("Finished building ID maps.");
 
-		// Sync in order of dependency
-		await syncExerciseLibrary();
-		await syncBlocksOverview();
+		// Sync dependent tables using the fresh ID maps
+		console.log("Starting sync for individual_blocks...");
 		await syncIndividualBlocks(exerciseIdMap, blockOverviewIdMap);
+		console.log("Finished sync for individual_blocks.");
+
+		console.log("Starting sync for workouts...");
 		await syncWorkouts(blockOverviewIdMap);
+		console.log("Finished sync for workouts.");
 
 		console.log("Sync process completed successfully.");
 	} catch (error) {

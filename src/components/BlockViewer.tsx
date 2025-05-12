@@ -1,40 +1,46 @@
 import React from 'react';
+// import type { PopulatedBlock } from '../lib/types'; // Old Airtable Type
+import type { SupabasePopulatedBlock, SupabaseBlockExercise } from '../lib/types'; // New Supabase Types
 import ExerciseTile from './ExerciseTile';
-import type { PopulatedBlock } from '../lib/types';
 
 interface BlockViewerProps {
-  block: PopulatedBlock;
+  // block: PopulatedBlock; // Old Airtable Type
+  block: SupabasePopulatedBlock; // New Supabase Type
+  blockNumber: number; // Keep block number for display
 }
 
-const BlockViewer: React.FC<BlockViewerProps> = ({ block }) => {
-  const { fields } = block;
-  const blockName = fields["Public Name"] || fields["Block Name"] || 'Unnamed Block';
-  const setsAndReps = fields["Sets & Reps"] || 'N/A';
-  const equipment = fields.Equipment?.join(', ') || 'N/A';
-  const exercises = fields.resolvedExercises || [];
+const BlockViewer: React.FC<BlockViewerProps> = ({ block, blockNumber }) => {
+  // Use Supabase field names
+  const blockName = block.public_name || `Block ${blockNumber}`;
+  // const setsAndReps = block.fields["Sets & Reps"]; // Old Airtable access
+  // Note: Sets/Reps info is now per-exercise in SupabaseIndividualBlock
+  const rest = block.rest_between_sets;
+  const intensity = block.intensity;
+  // const equipment = block.fields["Equipment"]?.join(', '); // Old Airtable access
+  // Note: Equipment info is likely on SupabaseExercise now -> block.block_exercises[n].exercise.equipment_public_name
+  
+  const exercises = block.block_exercises; // Use the array from SupabasePopulatedBlock
 
   return (
-    <div 
-      className="glassmorphic"
-      style={{
-        marginBottom: '25px',
-        padding: '20px 25px',
-        border: '1px solid var(--glass-border-color)'
-      }}
-    >
-      <h4 style={{ marginTop: 0, marginBottom: '10px', color: 'var(--text-headings)', fontSize: '1.3em' }}>{blockName}</h4>
-      <p style={{ fontSize: '0.95em', color: 'var(--text-secondary)', marginBottom: '5px' }}><strong>Sets & Reps:</strong> {setsAndReps}</p>
-      <p style={{ fontSize: '0.95em', color: 'var(--text-secondary)', marginBottom: '20px' }}><strong>Equipment:</strong> {equipment}</p>
-      
-      {exercises.length > 0 && (
-        <div style={{ marginTop: '15px' }}>
-          <h5 style={{ marginBottom: '10px', color: 'var(--text-headings)', fontSize: '1.1em' }}>Exercises:</h5>
-          {exercises.map(exercise => (
-            <ExerciseTile key={exercise.id} exercise={exercise} />
-          ))}
-        </div>
+    <div className="glassmorphic" style={{
+      marginBottom: '2rem',
+      padding: 'clamp(15px, 3vw, 25px)'
+    }}>
+      <h3 style={{ marginTop: 0, color: 'var(--text-headings)', borderBottom: '1px solid var(--glass-border-color)', paddingBottom: '10px', marginBottom: '15px' }}>{blockName}</h3>
+      {/* Display block-level info if available */}
+       <div style={{ marginBottom: '1rem', fontSize: '0.9em', color: 'var(--text-secondary)' }}>
+          {intensity && <div>Intensity: {intensity}</div>}
+          {rest && <div>Rest Between Sets: {rest}</div>}
+          {/* Add other block overview details here if needed */}
+       </div>
+
+      {exercises && exercises.length > 0 ? (
+        exercises.map((blockExercise: SupabaseBlockExercise) => (
+          <ExerciseTile key={blockExercise.id} blockExercise={blockExercise} />
+        ))
+      ) : (
+        <p style={{ color: 'var(--text-secondary)', textAlign: 'center' }}>No exercises found in this block.</p>
       )}
-      {exercises.length === 0 && <p style={{color: 'var(--text-secondary)', textAlign: 'center', padding: '10px 0'}}>No exercises listed for this block.</p>}
     </div>
   );
 };

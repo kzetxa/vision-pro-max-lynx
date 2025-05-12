@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import type { Exercise } from '../lib/types'; // Exercise is AirtableRecord<ExerciseFields>
+// import type { Exercise } from '../lib/types'; // Old Airtable Type
+import type { SupabaseBlockExercise, SupabaseExercise } from '../lib/types'; // New Supabase Type
 import * as RadixCheckbox from '@radix-ui/react-checkbox';
 import * as RadixTabs from '@radix-ui/react-tabs';
 import { CheckIcon } from '@radix-ui/react-icons';
@@ -7,8 +8,9 @@ import { CheckIcon } from '@radix-ui/react-icons';
 // import { CheckIcon } from '@radix-ui/react-icons'; // Will add later for checkbox
 
 interface ExerciseTileProps {
-  exercise: Exercise;
-  // onCompletionChange?: (exerciseId: string, setId: string | number, completed: boolean) => void; // For later with Supabase
+  // exercise: Exercise; // Old Airtable Type
+  blockExercise: SupabaseBlockExercise; // New Supabase Type
+  // onCompletionChange?: (exerciseId: string, setId: string | number, completed: boolean) => void; // Will need update for Supabase IDs
 }
 
 const getTabTriggerStyle = (isActive?: boolean): React.CSSProperties => ({
@@ -29,22 +31,42 @@ const getTabTriggerStyle = (isActive?: boolean): React.CSSProperties => ({
   marginRight: '10px',
 });
 
-const ExerciseTile: React.FC<ExerciseTileProps> = ({ exercise }) => {
-  const { fields } = exercise;
-  const exerciseName = fields["Current Name"] || 'Unnamed Exercise';
+const ExerciseTile: React.FC<ExerciseTileProps> = ({ blockExercise }) => {
+  // Extract exercise details from the nested exercise object
+  const exercise: SupabaseExercise | null = blockExercise.exercise; 
+
+  if (!exercise) {
+    // Handle case where exercise data might be missing (though unlikely with the current query)
+    return (
+        <div style={{
+          border: '1px solid var(--glass-border-color)',
+          backgroundColor: 'var(--card-bg-darker)', 
+          padding: '20px',
+          margin: '15px 0',
+          borderRadius: 'var(--glass-border-radius)',
+          color: 'var(--text-secondary)',
+          textAlign: 'center'
+        }}>
+            Exercise details not available for this entry (ID: {blockExercise.id}).
+        </div>
+    );
+  }
+
+  // Use Supabase field names from the exercise object
+  const exerciseName = exercise.current_name || 'Unnamed Exercise';
+  const muscleWorked = exercise.equipment_public_name || 'N/A'; // Assuming this is the primary muscle field now?
+  const vimeoCode = exercise.vimeo_code;
+  // Use Supabase explanation fields
+  const explanation1 = exercise.explanation_1;
   
-  // Safely handle Primary Muscle Worked whether it's an array, string, or undefined
-  const muscleData = fields["Primary Muscle Worked"];
-  const muscleWorked = Array.isArray(muscleData)
-    ? muscleData.join(', ') 
-    : (typeof muscleData === 'string' ? muscleData : 'N/A');
+  // Get sets/reps from blockExercise (individual block data)
+  const setCount = blockExercise.sets ?? 3; // Default to 3 sets if not specified
+  const setsRepsText = blockExercise.sets_and_reps_text;
+  const unit = blockExercise.unit;
+  const specialInstructions = blockExercise.special_instructions;
 
-  const vimeoCode = fields["Vimeo Code"];
-  const explanation1 = fields["Explination 1"];
-
-  // Placeholder for set completion state, will eventually come from/go to Supabase
-  // For simplicity, let's assume 3 sets for now if not specified by exercise data.
-  const [setsCompleted, setSetsCompleted] = useState<boolean[]>([false, false, false]);
+  // State for checkboxes based on actual set count
+  const [setsCompleted, setSetsCompleted] = useState<boolean[]>(Array(setCount).fill(false));
   const [activeTab, setActiveTab] = useState(vimeoCode ? 'video' : (explanation1 ? 'details' : ''));
 
   const handleSetCompletion = (index: number) => {
@@ -52,6 +74,7 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({ exercise }) => {
     newSetsCompleted[index] = !newSetsCompleted[index];
     setSetsCompleted(newSetsCompleted);
     // TODO: Call onCompletionChange here to update Supabase
+    // Need Supabase IDs: blockExercise.id (individual block instance), exercise.id (exercise library entry)
     // console.log(`Exercise ${exercise.id}, Set ${index + 1} completion: ${newSetsCompleted[index]}`);
   };
 
@@ -64,10 +87,17 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({ exercise }) => {
       borderRadius: 'var(--glass-border-radius)'
     }}>
       <h5 style={{ marginTop: 0, marginBottom: '8px', fontSize: '1.15em', color: 'var(--text-headings)' }}>{exerciseName}</h5>
-      <p style={{ fontSize: '0.9em', margin: '0 0 15px 0', color: 'var(--text-secondary)' }}>Muscle: {muscleWorked}</p>
+      {/* Display Sets/Reps/Unit/Instructions if available */}
+      <div style={{ fontSize: '0.9em', margin: '0 0 15px 0', color: 'var(--text-secondary)' }}>
+          {setsRepsText && <div>Sets/Reps: {setsRepsText}</div>}
+          {unit && <div>Unit: {unit}</div>}
+          {muscleWorked !== 'N/A' && <div>Muscle: {muscleWorked}</div>}
+          {specialInstructions && <div style={{marginTop: '5px'}}>Notes: {specialInstructions}</div>}
+      </div>
       
       {(vimeoCode || explanation1) && (
         <RadixTabs.Root defaultValue={activeTab} onValueChange={setActiveTab} style={{ width: '100%' }}>
+           {/* Tabs List and Content - use vimeoCode and explanation1 */}
           <RadixTabs.List style={{ display: 'flex', borderBottom: '1px solid var(--glass-border-color)', marginBottom: '15px' }}>
             {vimeoCode && (
               <RadixTabs.Trigger value="video" style={getTabTriggerStyle(activeTab === 'video')}>
@@ -100,6 +130,7 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({ exercise }) => {
           {explanation1 && (
             <RadixTabs.Content value="details">
               <p style={{ fontSize: '0.95em', lineHeight: 1.65, color: 'var(--text-primary)', padding: '5px 0' }}>{explanation1}</p>
+              {/* Consider adding explanation_2, 3, 4 if needed */}
             </RadixTabs.Content>
           )}
         </RadixTabs.Root>
@@ -109,14 +140,16 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({ exercise }) => {
       )}
 
       <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: `1px solid ${ (vimeoCode || explanation1) ? 'var(--glass-border-color)' : 'transparent'}` }}>
-        <p style={{fontSize: '0.95em', marginBottom: '10px', fontWeight: 500, color: 'var(--text-headings)'}}>Track Sets:</p>
+        <p style={{fontSize: '0.95em', marginBottom: '10px', fontWeight: 500, color: 'var(--text-headings)'}}>Track Sets ({setCount}):</p>
+        {/* Map over the actual number of sets */}
         {setsCompleted.map((isCompleted, index) => (
           <div key={index} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
             <RadixCheckbox.Root
-              id={`set-${exercise.id}-${index}`}
+              // Use Supabase IDs in the element ID for uniqueness
+              id={`set-${blockExercise.id}-${index}`}
               checked={isCompleted}
               onCheckedChange={() => handleSetCompletion(index)}
-              style={{
+              style={{ /* Styles remain the same */ 
                 all: 'unset',
                 backgroundColor: isCompleted ? 'var(--accent-color)' : 'rgba(255,255,255,0.15)',
                 width: '22px',
@@ -136,7 +169,7 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({ exercise }) => {
                 <CheckIcon width={18} height={18} />
               </RadixCheckbox.Indicator>
             </RadixCheckbox.Root>
-            <label htmlFor={`set-${exercise.id}-${index}`} style={{ fontSize: '0.9em', cursor: 'pointer', color: 'var(--text-primary)' }}>
+            <label htmlFor={`set-${blockExercise.id}-${index}`} style={{ fontSize: '0.9em', cursor: 'pointer', color: 'var(--text-primary)' }}>
               Set {index + 1}
             </label>
           </div>

@@ -102,4 +102,95 @@ export interface WorkoutProgress {
 // export interface ExerciseCompletion extends WorkoutProgress {}
 
 // Helper type for API responses that might be a single record or an error
-export type AirtableSingleResponse<TFields> = AirtableRecord<TFields> | { error: any }; 
+export type AirtableSingleResponse<TFields> = AirtableRecord<TFields> | { error: any };
+
+// --- Supabase Types ---
+
+// Base types mirroring Supabase tables (based on sync.ts)
+export interface SupabaseExercise {
+  id: string; // Primary UUID key from Supabase
+  airtable_record_id: string;
+  current_name?: string | null;
+  vimeo_code?: string | null;
+  equipment_public_name?: string | null;
+  over_sort_category?: string | null;
+  explanation_1?: string | null;
+  explanation_2?: string | null;
+  explanation_3?: string | null;
+  explanation_4?: string | null;
+  // Add other relevant fields from your Supabase exercise_library table
+  created_at?: string; 
+}
+
+export interface SupabaseBlockOverview {
+  id: string; // Primary UUID key from Supabase
+  airtable_record_id: string;
+  public_name?: string | null;
+  rest_between_sets?: string | null;
+  intensity?: string | null;
+   // Add other relevant fields from your Supabase blocks_overview table
+  created_at?: string; 
+}
+
+export interface SupabaseIndividualBlock {
+  id: string; // Primary UUID key from Supabase
+  airtable_record_id: string;
+  block_overview_id?: string | null; // Foreign key to blocks_overview.id
+  airtable_block_overview_record_id?: string | null;
+  exercise_id?: string | null;       // Foreign key to exercise_library.id
+  airtable_exercise_record_id?: string | null;
+  sets?: number | null;
+  reps?: number | null;
+  sets_and_reps_text?: string | null;
+  unit?: string | null;
+  special_instructions?: string | null;
+   // Add other relevant fields from your Supabase individual_blocks table
+  created_at?: string; 
+}
+
+export interface SupabaseWorkout {
+  id: string; // Primary UUID key from Supabase
+  airtable_record_id: string;
+  preview_video_url?: string | null;
+  header_image_url?: string | null;
+  public_workout_title?: string | null;
+  focus_area?: string | null;
+  level?: string | null;
+  duration?: string | null;
+  block_1_id?: string | null; // Foreign key to blocks_overview.id
+  airtable_block_1_record_id?: string | null;
+  block_2_id?: string | null; // Foreign key to blocks_overview.id
+  airtable_block_2_record_id?: string | null;
+  block_3_id?: string | null; // Foreign key to blocks_overview.id
+  airtable_block_3_record_id?: string | null;
+  block_4_id?: string | null; // Foreign key to blocks_overview.id
+  airtable_block_4_record_id?: string | null;
+  block_5_id?: string | null; // Foreign key to blocks_overview.id
+  airtable_block_5_record_id?: string | null;
+   // Add other relevant fields from your Supabase workouts table
+  created_at?: string; 
+}
+
+// --- Structured Types for Frontend Use ---
+
+// Represents an exercise within a block, fetched from Supabase
+export type SupabaseBlockExercise = Pick<SupabaseIndividualBlock, 'id' | 'sets' | 'reps' | 'sets_and_reps_text' | 'unit' | 'special_instructions'> & {
+  exercise: SupabaseExercise | null; // The joined exercise details
+};
+
+// Represents a block with its exercises, fetched from Supabase
+export type SupabasePopulatedBlock = SupabaseBlockOverview & {
+  block_exercises: SupabaseBlockExercise[]; // Array of exercises in this block
+};
+
+// Represents a workout with its blocks populated, fetched from Supabase
+// Note: We store blocks in an array now, not fixed fields like block_1, block_2
+export type SupabasePopulatedWorkout = Omit<SupabaseWorkout, 'block_1_id' | 'block_2_id' | 'block_3_id' | 'block_4_id' | 'block_5_id' | 'airtable_block_1_record_id' | 'airtable_block_2_record_id' | 'airtable_block_3_record_id' | 'airtable_block_4_record_id' | 'airtable_block_5_record_id'> & {
+  blocks: SupabasePopulatedBlock[]; // Array of populated blocks for the workout
+};
+
+// Represents the data needed for the workout card on the home page
+export type SupabaseWorkoutPreview = Pick<SupabaseWorkout, 'id' | 'public_workout_title' | 'header_image_url' | 'focus_area' | 'level' | 'duration'> & {
+   block1_public_name?: string | null; // Include block 1's public name if needed for display like before
+   // Add other preview fields if necessary, e.g., image derived differently
+}; 

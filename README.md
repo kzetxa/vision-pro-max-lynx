@@ -52,11 +52,11 @@ README.md                     # This file
 3.  **Set up Environment Variables:**
     Create a `.env` file in the root of the project and add your Airtable and Supabase credentials:
     ```env
-    VITE_SUPABASE_URL=your_supabase_url
-    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+    SUPABASE_URL=your_supabase_url
+    SUPABASE_ANON_KEY=your_supabase_anon_key
     AIRTABLE_API_KEY=your_airtable_api_key 
     ```
-    *   `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are for the frontend Supabase client.
+    *   `SUPABASE_URL` and `SUPABASE_ANON_KEY` are for the frontend Supabase client.
     *   `AIRTABLE_API_KEY` is used by the Netlify functions (backend). You'll need to set this in your Netlify environment variables when deploying.
 
 4.  **Netlify Dev (for local development with functions):**

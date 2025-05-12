@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import BlockViewer from '../components/BlockViewer';
 import CompletionChart from '../components/CompletionChart';
-import { getWorkoutDetails } from '../lib/api';
-import type { PopulatedWorkout, PopulatedBlock } from '../lib/types';
+import { fetchWorkoutDetailsById } from '../lib/api';
+import type { SupabasePopulatedWorkout } from '../lib/types';
 import * as RadixDialog from '@radix-ui/react-dialog';
 import { Cross2Icon } from '@radix-ui/react-icons';
 
@@ -38,7 +38,7 @@ const WorkoutPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const clientId = searchParams.get('clientid');
 
-  const [workoutDetails, setWorkoutDetails] = useState<PopulatedWorkout | null>(null);
+  const [workoutData, setWorkoutData] = useState<SupabasePopulatedWorkout | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showChart, setShowChart] = useState(false);
@@ -46,58 +46,66 @@ const WorkoutPage: React.FC = () => {
 
   useEffect(() => {
     if (!workoutId) {
-      setError('No workout ID provided.');
+      setError('Workout ID is missing from URL.');
       setLoading(false);
       return;
     }
-    const loadWorkoutDetails = async () => {
+
+    const loadWorkout = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        const data = await getWorkoutDetails(workoutId);
-        setWorkoutDetails(data);
-        setError(null);
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch workout details');
-        console.error(err);
-      } finally {
-        setLoading(false);
+        const data = await fetchWorkoutDetailsById(workoutId);
+        if (data) {
+          setWorkoutData(data);
+        } else {
+          setError('Workout not found.');
+        }
+      } catch (err) {
+        console.error("Error fetching workout details:", err);
+        setError(err instanceof Error ? err.message : 'Failed to load workout details');
       }
+      setLoading(false);
     };
-    loadWorkoutDetails();
+
+    loadWorkout();
   }, [workoutId]);
 
-  const confirmFinishWorkout = () => {
-    setShowChart(true);
+  const handleFinishWorkout = () => {
+    console.log("Finish workout clicked for:", workoutData?.id);
     setIsFinishDialogOpen(false);
-    console.log('Workout finished by client:', clientId, 'for workout:', workoutId);
-    // TODO: Persist workout completion status to Supabase here
   };
 
-  if (loading) return <div style={{textAlign: 'center', marginTop: '50px', fontSize: '1.2em'}}><p>Loading workout details...</p></div>;
-  if (error) return <div style={{textAlign: 'center', marginTop: '50px', color: '#ff8a80'}}><p>Error: {error}</p></div>;
-  if (!workoutDetails) return <div style={{textAlign: 'center', marginTop: '50px', fontSize: '1.1em'}}><p>Workout not found.</p></div>;
+  if (loading) {
+    return <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading workout...</p>;
+  }
 
-  const { fields } = workoutDetails;
-  const blocksToDisplay: PopulatedBlock[] = [];
-  if (fields.resolvedBlock1) blocksToDisplay.push(fields.resolvedBlock1);
-  if (fields.resolvedBlock2) blocksToDisplay.push(fields.resolvedBlock2);
-  if (fields.resolvedBlock3) blocksToDisplay.push(fields.resolvedBlock3);
+  if (error) {
+    return <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--accent-color)' }}>Error: {error}</p>;
+  }
+
+  if (!workoutData) {
+    return <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Workout data could not be loaded.</p>;
+  }
+
+  const workoutTitle = workoutData.public_workout_title || 'Workout Plan';
 
   return (
     <div className="glassmorphic" style={{ padding: 'clamp(20px, 5vw, 40px)', maxWidth: '900px', margin: '20px auto', width: '90%' }}>
-      <h2 style={{textAlign: 'center', marginBottom: '8px'}}>{fields.Name || 'Unnamed Workout'}</h2>
+      <h2 style={{textAlign: 'center', marginBottom: '8px'}}>{workoutTitle}</h2>
       <p style={{textAlign: 'center', fontSize: '0.9em', color: 'var(--text-secondary)' , marginBottom: '5px'}}>Client ID: {clientId || 'N/A'}</p>
-      {fields["Type of workout"] && <p style={{textAlign: 'center', fontSize: '0.9em', color: 'var(--text-secondary)', marginBottom: '30px'}}>Type: {fields["Type of workout"]}</p>}
+      {/* Removed Type of Workout display as it's not directly in SupabaseWorkout type */}
+      {/* {workoutData["Type of workout"] && <p style={{textAlign: 'center', fontSize: '0.9em', color: 'var(--text-secondary)', marginBottom: '30px'}}>Type: {workoutData["Type of workout"]}</p>} */}
 
       {!showChart ? (
         <>
           <h3 style={{ marginTop: '20px', marginBottom: '20px', borderBottom: '1px solid var(--glass-border-color)', paddingBottom: '12px', color: 'var(--text-headings)'}}>Workout Blocks:</h3>
-          {blocksToDisplay.length > 0 ? (
-            blocksToDisplay.map((block) => (
-              <BlockViewer key={block.id} block={block} />
+          {workoutData.blocks && workoutData.blocks.length > 0 ? (
+            workoutData.blocks.map((block, index) => (
+              <BlockViewer key={block.id} block={block} blockNumber={index + 1} />
             ))
           ) : (
-            <p style={{textAlign: 'center', color: 'var(--text-secondary)', padding: '20px 0'}}>No blocks found for this workout.</p>
+            <p>No blocks found for this workout.</p>
           )}
           
           <RadixDialog.Root open={isFinishDialogOpen} onOpenChange={setIsFinishDialogOpen}>
@@ -132,7 +140,7 @@ const WorkoutPage: React.FC = () => {
               <RadixDialog.Content style={contentStyle}>
                 <RadixDialog.Title style={{ margin: '0 0 15px 0', fontWeight: 600, fontSize: '1.3em', color: 'var(--text-headings)' }}>Confirm Finish</RadixDialog.Title>
                 <RadixDialog.Description style={{ marginBottom: '25px', color: 'var(--text-primary)', fontSize: '1em', lineHeight: 1.6 }}>
-                  Are you sure you want to mark this workout as finished? This action will proceed to the summary.
+                  Are you sure you want to mark this workout as complete?
                 </RadixDialog.Description>
                 <div style={{ display: 'flex', marginTop: '30px', justifyContent: 'flex-end', gap: '15px' }}>
                   <RadixDialog.Close asChild>
@@ -145,12 +153,12 @@ const WorkoutPage: React.FC = () => {
                     </button>
                   </RadixDialog.Close>
                   <button 
-                    onClick={confirmFinishWorkout} 
+                    onClick={handleFinishWorkout} 
                     style={{padding: '10px 20px', borderRadius: 'var(--glass-border-radius)', backgroundColor: 'var(--accent-color)', color: 'white', cursor:'pointer', fontWeight: 500, transition: 'background-color 0.2s ease', border: 'none'}}
                     onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => e.currentTarget.style.backgroundColor = 'var(--accent-color-hover)'}
                     onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => e.currentTarget.style.backgroundColor = 'var(--accent-color)'}
                   >
-                    Confirm Finish
+                    Yes, Finish
                   </button>
                 </div>
                 <RadixDialog.Close asChild>
@@ -168,7 +176,7 @@ const WorkoutPage: React.FC = () => {
           </RadixDialog.Root>
         </>
       ) : (
-        <CompletionChart workoutData={workoutDetails} />
+        <p>Chart will be shown here.</p>
       )}
     </div>
   );

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 // import type { WorkoutWithBlock1Preview } from '../lib/types'; // Old Type
 import type { SupabaseWorkoutPreview } from '../lib/types'; // New Type
+import { extractUrlFromStringArray } from '../lib/utils'; // Import the new utility function
 
 interface WorkoutCardProps {
   // workout: WorkoutWithBlock1Preview; // Old prop
@@ -16,7 +17,11 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workoutPreview }) => {
   const workoutId = workoutPreview.id;
   // Use workout title, fallback to block 1 name if needed (logic might change based on preference)
   const title = workoutPreview.public_workout_title || workoutPreview.block1_public_name || 'Unnamed Workout';
-  const imageUrl = workoutPreview.header_image_url || PLACEHOLDER_IMAGE_URL;
+  
+  // Use the utility function to extract the URL
+  const extractedImageUrl = extractUrlFromStringArray(workoutPreview.header_image_url);
+  const imageUrl = extractedImageUrl || PLACEHOLDER_IMAGE_URL;
+  
   const focus = workoutPreview.focus_area;
   const level = workoutPreview.level;
   const duration = workoutPreview.duration;

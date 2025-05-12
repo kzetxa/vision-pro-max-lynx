@@ -74,13 +74,26 @@ export const getBlockDetails = async (blockId: string): Promise<PopulatedBlock> 
 
 // --- Supabase API Functions ---
 
+const DEFAULT_PAGE_LIMIT = 10;
+
 /**
- * Fetches workouts suitable for display on the home page.
+ * Fetches workouts suitable for display on the home page, with pagination.
  * Includes basic workout details and the public name of the first block.
+ * 
+ * @param page The page number to fetch (1-indexed).
+ * @param limit The number of items per page.
+ * @returns An object containing the list of workouts for the page and a boolean indicating if more pages might exist.
  */
-export async function fetchWorkoutsForHome(): Promise<SupabaseWorkoutPreview[]> {
-  console.log('Fetching workouts for home page from Supabase...');
-  const { data: workouts, error } = await supabase
+export async function fetchWorkoutsForHome(
+    page: number = 1, 
+    limit: number = DEFAULT_PAGE_LIMIT
+): Promise<{ workouts: SupabaseWorkoutPreview[], hasMore: boolean }> {
+  console.log(`Fetching workouts page ${page} (limit ${limit}) for home page from Supabase...`);
+  
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit - 1;
+
+  const { data: workoutsData, error, count } = await supabase
     .from('workouts')
     .select(`
       id,
@@ -90,19 +103,18 @@ export async function fetchWorkoutsForHome(): Promise<SupabaseWorkoutPreview[]> 
       level,
       duration,
       block1:blocks_overview!block_1_id ( public_name ) 
-    `)
+    `, { count: 'exact' }) // Request total count for pagination logic
     // Add filtering if needed, e.g., for published workouts
     // .eq('status', 'published') 
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(startIndex, endIndex); // Apply range for pagination
 
   if (error) {
-    console.error('Error fetching workouts for home:', error);
+    console.error(`Error fetching workouts page ${page}:`, error);
     throw new Error(`Failed to fetch workouts: ${error.message}`);
   }
 
-  if (!workouts) {
-      return [];
-  }
+  const workouts = workoutsData || [];
 
   // Process data to match the SupabaseWorkoutPreview structure
   const previews: SupabaseWorkoutPreview[] = workouts.map((w: any) => ({
@@ -115,8 +127,14 @@ export async function fetchWorkoutsForHome(): Promise<SupabaseWorkoutPreview[]> 
     block1_public_name: w.block1?.public_name ?? null,
   }));
 
-  console.log(`Fetched ${previews.length} workout previews.`);
-  return previews;
+  // Determine if there are more workouts to load
+  // Compare total fetched so far (page * limit) with the total count from Supabase
+  // Or simply check if the number of returned items is less than the limit (might be slightly less accurate on the very last page)
+  const hasMore = count ? (page * limit < count) : (previews.length === limit);
+
+  console.log(`Fetched ${previews.length} workout previews for page ${page}. Total count: ${count ?? 'N/A'}. Has more: ${hasMore}`);
+  
+  return { workouts: previews, hasMore };
 }
 
 /**

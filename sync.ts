@@ -179,6 +179,43 @@ async function upsertRecords(
 	}
 }
 
+// Helper function for paginated select
+async function selectAll(tableName: string, columns: string): Promise<any[]> {
+	const PAGE_SIZE = 1000; // Supabase default limit
+	let allData: any[] = [];
+	let page = 0;
+	let moreData = true;
+
+	console.log(`[selectAll] Fetching all data from ${tableName} in pages...`);
+
+	while (moreData) {
+		const { data, error, count } = await supabase
+			.from(tableName)
+			.select(columns, { count: 'exact' }) // Request count for debugging/logging
+			.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+		if (error) {
+			console.error(`[selectAll] Error fetching page ${page} for ${tableName}:`, error);
+			throw error;
+		}
+
+		if (data && data.length > 0) {
+			allData = allData.concat(data);
+			console.log(`[selectAll] Fetched page ${page} (${data.length} rows) for ${tableName}. Total fetched: ${allData.length}. Estimated total: ${count ?? 'N/A'}`); // Log count
+			// Stop if we fetched less than a full page OR if we have fetched the total count (if available)
+			if (data.length < PAGE_SIZE || (count !== null && allData.length >= count)) {
+				moreData = false;
+			} else {
+				page++;
+			}
+		} else {
+			moreData = false; // No more data found
+		}
+	}
+	console.log(`[selectAll] Finished fetching. Total rows retrieved for ${tableName}: ${allData.length}`);
+	return allData;
+}
+
 async function buildIdMap(tableName: string, airtableIdColumn: string = 'airtable_record_id', supabaseIdColumn: string = 'id'): Promise<Map<string, string>> {
 	console.log(`[buildIdMap] Building ID map for ${tableName}.`);
 	const idMap = new Map<string, string>();
@@ -188,19 +225,25 @@ async function buildIdMap(tableName: string, airtableIdColumn: string = 'airtabl
 		// console.log(`[buildIdMap] Connected to DB for table ${tableName}. Fetching IDs...`); 
 		// const res = await client.query(`SELECT ${airtableIdColumn}, ${supabaseIdColumn} FROM public.${tableName}`);
 
-		const { data, error } = await supabase
-			.from(tableName)
-			.select(`${supabaseIdColumn}, ${airtableIdColumn}`);
+		// const { data, error } = await supabase
+		// 	.from(tableName)
+		// 	.select(`${supabaseIdColumn}, ${airtableIdColumn}`);
 
-		if (error) {
-			console.error(`[buildIdMap] Error fetching IDs for ${tableName}:`, error);
-			throw error; // Propagate the error
-		}
+		// Use selectAll helper to ensure all rows are fetched
+		const data = await selectAll(tableName, `${supabaseIdColumn}, ${airtableIdColumn}`);
+
+		// if (error) { // Error handling is now within selectAll or caught below
+		// 	console.error(`[buildIdMap] Error fetching IDs for ${tableName}:`, error);
+		// 	throw error; // Propagate the error
+		// }
 
 		if (data) {
 			data.forEach((row: any) => { // Add :any type for row if Supabase types are not explicitly defined here
 				if (row[airtableIdColumn] && row[supabaseIdColumn]) {
 					idMap.set(row[airtableIdColumn], row[supabaseIdColumn]);
+				} else {
+					// Add a warning if a row is missing one of the IDs, might indicate data issues
+					console.warn(`[buildIdMap] Row in ${tableName} missing expected ID columns (airtableId: ${row[airtableIdColumn]}, supabaseId: ${row[supabaseIdColumn]}):`, row);
 				}
 			});
 		}
@@ -209,7 +252,8 @@ async function buildIdMap(tableName: string, airtableIdColumn: string = 'airtabl
 		// Error already logged or will be logged by the caller if re-thrown
 		// console.error(`[buildIdMap] Error building ID map for ${tableName}:`, error);
 		// Re-throw if not already a Supabase error, or let it propagate
-		if (!(error instanceof Error && 'message' in error && (error.message.includes('PostgrestError') || error.message.includes('Error fetching IDs')))) {
+		// Check if the error message indicates it originated from selectAll to avoid double logging
+		if (!(error instanceof Error && (error.message.includes('[selectAll]') || error.message.includes('Error fetching IDs')))) {
 			console.error(`[buildIdMap] Unhandled error building ID map for ${tableName}:`, error);
 		}
 		throw error; // Ensure errors are propagated
@@ -457,13 +501,13 @@ async function main() {
 		console.log("Sync process completed successfully.");
 	} catch (error) {
 		console.error("Main sync process failed overall:");
-        if (error instanceof Error) {
-            console.error("Error Name:", error.name);
-            console.error("Error Message:", error.message);
-            console.error("Error Stack:", error.stack);
-        } else {
-            console.error("Raw Error:", error);
-        }
+		if (error instanceof Error) {
+			console.error("Error Name:", error.name);
+			console.error("Error Message:", error.message);
+			console.error("Error Stack:", error.stack);
+		} else {
+			console.error("Raw Error:", error);
+		}
 	} finally {
 		// await pool.end(); // Close the connection pool // Not needed for supabase-js client
 	}

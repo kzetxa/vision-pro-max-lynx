@@ -27,43 +27,6 @@
   }
 }
 
-.tabsList {
-  display: flex;
-  border-bottom: theme.$border-width-thin solid theme.$border-primary;
-  margin-bottom: theme.$spacing-md;
-}
-
-.tabsTrigger {
-  all: unset; // Reset button styles
-  font-family: inherit;
-  background-color: transparent;
-  padding: theme.$spacing-sm theme.$spacing-md;
-  height: 40px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: theme.$text-secondary;
-  font-size: 0.9em;
-  line-height: 1;
-  cursor: pointer;
-  border-bottom: theme.$border-width-medium solid transparent;
-  transition: color theme.$transition-fast, border-color theme.$transition-fast;
-  margin-bottom: -1px; // Overlap border slightly
-  margin-right: theme.$spacing-sm;
-
-  &[data-state='active'] {
-    color: theme.$text-accent;
-    border-bottom-color: theme.$accent-primary;
-  }
-
-  &:focus-visible {
-    position: relative; // Allows outline to cover bottom border
-    outline: 2px solid theme.$accent-primary;
-    outline-offset: 2px;
-    border-radius: theme.$border-radius-sm;
-  }
-}
-
 .videoContainer {
   margin: theme.$spacing-sm 0;
   aspect-ratio: 16 / 9;
@@ -77,6 +40,14 @@
   width: 100%;
   height: 100%;
   border: none;
+}
+
+.explanationContainer {
+  background-color: theme.$bg-primary; // Use the darkest bg for contrast
+  padding: theme.$spacing-sm theme.$spacing-md;
+  margin-top: theme.$spacing-md; // Add space below video if it exists
+  border-radius: theme.$border-radius-sm;
+  box-shadow: theme.$box-shadow-inset; // Use inset shadow
 }
 
 .explanation {

@@ -93,7 +93,26 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({
   const unit = blockExercise.unit;
   const specialInstructions = blockExercise.special_instructions;
 
-  const [activeTab, setActiveTab] = useState(vimeoCode ? 'video' : (explanation1 ? 'details' : ''));
+  // Helper to parse potentially stringified arrays
+  const getDisplayableArrayString = (data: string | null | undefined): string => {
+    if (!data) return '';
+    try {
+      // Check if it looks like a stringified array (basic check)
+      if (data.startsWith('[') && data.endsWith(']')) {
+        const parsed = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed.join(', ') : data;
+      }
+    } catch (e) {
+      // If parsing fails, return the original string
+      console.error("Failed to parse array string:", data, e);
+      return data;
+    }
+    // Return original data if not detected as stringified array
+    return data;
+  };
+
+  const typeDisplay = getDisplayableArrayString(exercise.over_sort_category);
+  const equipmentDisplay = getDisplayableArrayString(exercise.equipment_public_name);
 
   const handleRepCompletion = (repIndex: number) => {
     // Prevent changes if exercise is already done
@@ -122,27 +141,6 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({
     }
   };
 
-  // Helper to parse potentially stringified arrays
-  const getDisplayableArrayString = (data: string | null | undefined): string => {
-    if (!data) return '';
-    try {
-      // Check if it looks like a stringified array (basic check)
-      if (data.startsWith('[') && data.endsWith(']')) {
-        const parsed = JSON.parse(data);
-        return Array.isArray(parsed) ? parsed.join(', ') : data;
-      }
-    } catch (e) {
-      // If parsing fails, return the original string
-      console.error("Failed to parse array string:", data, e);
-      return data;
-    }
-    // Return original data if not detected as stringified array
-    return data;
-  };
-
-  const typeDisplay = getDisplayableArrayString(exercise.over_sort_category);
-  const equipmentDisplay = getDisplayableArrayString(exercise.equipment_public_name);
-
   return (
     // Add a class if the exercise is done for potential styling
     <div className={`${styles.exerciseTile} ${isExerciseDone ? styles.exerciseDone : ''}`}>
@@ -167,42 +165,26 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({
         </p>
       )}
       
-      {(vimeoCode || explanation1) && (
-        <RadixTabs.Root defaultValue={activeTab} onValueChange={setActiveTab}>
-          <RadixTabs.List className={styles.tabsList}>
-            {vimeoCode && (
-              <RadixTabs.Trigger value="video" className={styles.tabsTrigger}>
-                Video
-              </RadixTabs.Trigger>
-            )}
-            {explanation1 && (
-              <RadixTabs.Trigger value="details" className={styles.tabsTrigger}>
-                Details
-              </RadixTabs.Trigger>
-            )}
-          </RadixTabs.List>
-
-          {vimeoCode && (
-            <RadixTabs.Content value="video">
-              <div className={styles.videoContainer}>
-                <iframe 
-                  className={styles.iframe}
-                  src={`https://player.vimeo.com/video/${vimeoCode}`}
-                  frameBorder="0" 
-                  allow="autoplay; fullscreen; picture-in-picture" 
-                  allowFullScreen
-                  title={exerciseName}
-                ></iframe>
-              </div>
-            </RadixTabs.Content>
-          )}
-          {explanation1 && (
-            <RadixTabs.Content value="details">
-              <p className={styles.explanation}>{explanation1}</p>
-            </RadixTabs.Content>
-          )}
-        </RadixTabs.Root>
+      {/* Conditional rendering for video and explanation */} 
+      {vimeoCode && (
+        <div className={styles.videoContainer}>
+          <iframe 
+            className={styles.iframe}
+            src={`https://player.vimeo.com/video/${vimeoCode}`}
+            frameBorder="0" 
+            allow="autoplay; fullscreen; picture-in-picture" 
+            allowFullScreen
+            title={exerciseName}
+          ></iframe>
+        </div>
       )}
+
+      {explanation1 && (
+          <div className={styles.explanationContainer}> {/* New container for styling */} 
+            <p className={styles.explanation}>{explanation1}</p>
+          </div>
+      )}
+
       {!(vimeoCode || explanation1) && (
           <p className={styles.statusMessage}>No video or details available.</p>
       )}

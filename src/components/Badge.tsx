@@ -1,5 +1,5 @@
-import React from 'react';
-import styles from './Badge.module.scss';
+import React from "react";
+import styles from "./Badge.module.scss";
 
 interface BadgeProps {
   label?: string;       // Optional label text (e.g., "Intensity:")
@@ -9,12 +9,12 @@ interface BadgeProps {
 }
 
 const Badge: React.FC<BadgeProps> = ({ label, value, className }) => {
-  return (
-    <span className={`${styles.badge} ${className || ''}`}>
-      {label && <strong className={styles.label}>{label}</strong>}
-      {value}
-    </span>
-  );
+	return (
+		<span className={`${styles.badge} ${className || ""}`}>
+			{label && <strong className={styles.label}>{label}</strong>}
+			{value}
+		</span>
+	);
 };
 
 export default Badge; 

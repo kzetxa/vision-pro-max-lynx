@@ -56,7 +56,7 @@ export interface BlockFields {
   "Intensity"?: string;
   // Add any other fields from your 'Blocks Overview' table
 }
-export interface PopulatedBlockFields extends Omit<BlockFields, 'Exercises'> {
+export interface PopulatedBlockFields extends Omit<BlockFields, "Exercises"> {
   resolvedExercises?: Exercise[];
 }
 export type Block = AirtableRecord<BlockFields>;
@@ -76,7 +76,7 @@ export interface WorkoutFields {
   // Add any other fields from your 'Workouts' table
 }
 
-export interface PopulatedWorkoutFields extends Omit<WorkoutFields, 'Block 1' | 'Block 2' | 'Block 3' | 'card for preview with block (from Block 1)'> {
+export interface PopulatedWorkoutFields extends Omit<WorkoutFields, "Block 1" | "Block 2" | "Block 3" | "card for preview with block (from Block 1)"> {
   resolvedBlock1?: PopulatedBlock;
   resolvedBlock2?: PopulatedBlock;
   resolvedBlock3?: PopulatedBlock;
@@ -95,7 +95,7 @@ export interface WorkoutProgress {
   exercise_id: string; // Airtable record ID
   set_number?: number; // If tracking per set
   completed_at?: string; // ISO timestamp
-  status: 'incomplete' | 'in_progress' | 'completed' | 'skipped';
+  status: "incomplete" | "in_progress" | "completed" | "skipped";
 }
 
 // If you have a separate table for exercise completion, otherwise WorkoutProgress can handle it.
@@ -174,7 +174,7 @@ export interface SupabaseWorkout {
 // --- Structured Types for Frontend Use ---
 
 // Represents an exercise within a block, fetched from Supabase
-export type SupabaseBlockExercise = Pick<SupabaseIndividualBlock, 'id' | 'sets' | 'reps' | 'sets_and_reps_text' | 'unit' | 'special_instructions'> & {
+export type SupabaseBlockExercise = Pick<SupabaseIndividualBlock, "id" | "sets" | "reps" | "sets_and_reps_text" | "unit" | "special_instructions"> & {
   exercise: SupabaseExercise | null; // The joined exercise details
 };
 
@@ -185,12 +185,12 @@ export type SupabasePopulatedBlock = SupabaseBlockOverview & {
 
 // Represents a workout with its blocks populated, fetched from Supabase
 // Note: We store blocks in an array now, not fixed fields like block_1, block_2
-export type SupabasePopulatedWorkout = Omit<SupabaseWorkout, 'block_1_id' | 'block_2_id' | 'block_3_id' | 'block_4_id' | 'block_5_id' | 'airtable_block_1_record_id' | 'airtable_block_2_record_id' | 'airtable_block_3_record_id' | 'airtable_block_4_record_id' | 'airtable_block_5_record_id'> & {
+export type SupabasePopulatedWorkout = Omit<SupabaseWorkout, "block_1_id" | "block_2_id" | "block_3_id" | "block_4_id" | "block_5_id" | "airtable_block_1_record_id" | "airtable_block_2_record_id" | "airtable_block_3_record_id" | "airtable_block_4_record_id" | "airtable_block_5_record_id"> & {
   blocks: SupabasePopulatedBlock[]; // Array of populated blocks for the workout
 };
 
 // Represents the data needed for the workout card on the home page
-export type SupabaseWorkoutPreview = Pick<SupabaseWorkout, 'id' | 'public_workout_title' | 'header_image_url' | 'focus_area' | 'level' | 'duration'> & {
+export type SupabaseWorkoutPreview = Pick<SupabaseWorkout, "id" | "public_workout_title" | "header_image_url" | "focus_area" | "level" | "duration"> & {
    block1_public_name?: string | null; // Include block 1's public name if needed for display like before
    // Add other preview fields if necessary, e.g., image derived differently
 }; 

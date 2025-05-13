@@ -122,23 +122,26 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({
     }
   };
 
-  // Helper to parse muscle groups if it's a stringified array
-  const getDisplayableMuscleGroups = (muscleData: string | null | undefined): string => {
-    if (!muscleData) return '';
+  // Helper to parse potentially stringified arrays
+  const getDisplayableArrayString = (data: string | null | undefined): string => {
+    if (!data) return '';
     try {
-      if (muscleData.startsWith('[') && muscleData.endsWith(']')) {
-        const parsed = JSON.parse(muscleData);
-        return Array.isArray(parsed) ? parsed.join(', ') : muscleData;
+      // Check if it looks like a stringified array (basic check)
+      if (data.startsWith('[') && data.endsWith(']')) {
+        const parsed = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed.join(', ') : data;
       }
     } catch (e) {
       // If parsing fails, return the original string
-      console.error("Failed to parse muscle data:", e);
-      return muscleData;
+      console.error("Failed to parse array string:", data, e);
+      return data;
     }
-    return muscleData;
+    // Return original data if not detected as stringified array
+    return data;
   };
 
-  const muscleDisplay = getDisplayableMuscleGroups(exercise.over_sort_category);
+  const typeDisplay = getDisplayableArrayString(exercise.over_sort_category);
+  const equipmentDisplay = getDisplayableArrayString(exercise.equipment_public_name);
 
   return (
     // Add a class if the exercise is done for potential styling
@@ -149,12 +152,11 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({
       <div className={styles.infoBadgesContainer}>
         {setsRepsTextForDisplay && <Badge label="Sets/Reps:" value={setsRepsTextForDisplay} />}
         {unit && <Badge label="Unit:" value={unit} />}
-        {muscleWorked !== 'N/A' && <Badge label="Muscle:" value={muscleWorked} />}
-        {muscleDisplay && (
-          <Badge label="Muscle:" value={muscleDisplay} className={styles.muscleBadge} />
+        {typeDisplay && (
+          <Badge label="Exercise Type:" value={typeDisplay} className={styles.typeBadge} />
         )}
-        {exercise.equipment_public_name && (
-          <Badge label="Equipment:" value={exercise.equipment_public_name} className={styles.equipmentBadge} />
+        {equipmentDisplay && (
+          <Badge label="Equipment Needed:" value={equipmentDisplay} className={styles.equipmentBadge} />
         )}
       </div>
       

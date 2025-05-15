@@ -8,6 +8,9 @@ import { parseSetsAndReps, getDisplayableArrayString } from "../../lib/utils";
 import Badge from "../Badge"; // Assuming Badge component path
 import styles from "./ExerciseDetailDialog.module.scss";
 import ExerciseFeedbackDialog from "./ExerciseFeedbackDialog"; // Added for the new dialog
+import ExerciseVideoPlayer from "./ExerciseVideoPlayer";
+import ExerciseDetailHeader from "./ExerciseDetailHeader";
+import ExerciseInfoBadges from "./ExerciseInfoBadges";
 
 export interface ExerciseDetailDialogProps {
   exercise: SupabaseExercise;
@@ -79,70 +82,26 @@ const ExerciseDetailDialog: React.FC<ExerciseDetailDialogProps> = observer(
 					>
 						<Cross2Icon />
 					</button>
-					{/* Top Panel: Video */}
-					<div className={styles.videoPanel}>
-						{vimeoCode ? (
-							<iframe
-								allow="autoplay; fullscreen; picture-in-picture"
-								allowFullScreen
-								className={styles.videoFrame}
-								frameBorder="0"
-								src={`https://player.vimeo.com/video/${vimeoCode}?autoplay=1&muted=1&loop=1&autopause=0&controls=0&title=0&byline=0&portrait=0`}
-								title={exerciseName}
-							/>
-						) : (
-							<div className={styles.videoPlaceholder}>
-                No Video Available
-							</div>
-						)}
-					</div>
+					{/* Video Panel */}
+					<ExerciseVideoPlayer exerciseName={exerciseName} vimeoCode={vimeoCode} />
 					{/* Bottom Panel: Details */}
 					<div className={styles.detailsPanel}>
-						<div className={styles.headerRow}>
-							<div className={styles.headerText}>
-								<div className={styles.exerciseNameContainer}>
-									<h2 className={styles.exerciseName}>{exerciseName}</h2>
-									<button 
-										aria-label="Open feedback dialog" 
-										className={styles.feedbackButton}
-										onClick={() => dialogStore.pushDialog(ExerciseFeedbackDialog, { exercise })}
-									>
-										<CameraIcon />
-									</button>
-								</div>
-								{repsText && <p className={styles.repsText}>{repsText}</p>}
-							</div>
-							<Checkbox.Root
-								aria-label={`Mark ${exerciseName} as complete`}
-								checked={isComplete}
-								className={styles.completionCheckboxRoot}
-								onClick={handleCheckboxClick} // Use wrapper to stop propagation
-								onKeyDown={handleCheckboxKeyDown}
-							>
-								<Checkbox.Indicator className={styles.completionCheckboxIndicator}>
-									<CheckIcon />
-								</Checkbox.Indicator>
-							</Checkbox.Root>
-						</div>
+						<ExerciseDetailHeader
+							exercise={exercise}
+							exerciseName={exerciseName}
+							handleCheckboxClick={handleCheckboxClick}
+							handleCheckboxKeyDown={handleCheckboxKeyDown}
+							isComplete={isComplete}
+							onToggleComplete={onToggleComplete}
+							repsText={repsText}
+						/>
 						{description && (
 							<p className={styles.description}>{description}</p>
 						)}
-						<div className={styles.badgesRow}>
-							{exerciseType && (
-								<Badge
-									className={styles.badge}
-									label="Exercise Type"
-									value={exerciseType}
-								/>
-							)}
-							{equipmentNeeded && (
-								<Badge
-									className={styles.badge}
-									label="Equipment"
-									value={equipmentNeeded}
-								/>
-							)}
-						</div>
+						<ExerciseInfoBadges 
+							equipmentNeeded={equipmentNeeded} 
+							exerciseType={exerciseType} 
+						/>
 					</div>
 				</div>
 			</div>

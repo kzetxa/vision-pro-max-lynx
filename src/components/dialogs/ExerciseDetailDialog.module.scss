@@ -1,0 +1,199 @@
+.dialogOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.dialogContent {
+  background-color: #2d2d2d; // Dark background like the image
+  color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 600px; // Adjust as needed
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  position: relative; // For close button positioning
+}
+
+.closeButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(40, 40, 40, 0.7);
+  border: none;
+  color: #ffffff;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10; // Above video panel
+  transition: background-color 0.2s ease;
+}
+
+.closeButton:hover {
+  background-color: rgba(60, 60, 60, 0.9);
+}
+
+.closeButton svg {
+  width: 20px;
+  height: 20px;
+}
+
+.videoPanel {
+  width: 100%;
+  /* Maintain aspect ratio, e.g., 16:9. Adjust height or use padding-top trick if needed */
+  aspect-ratio: 16 / 9; 
+  background-color: #000000;
+  border-top-left-radius: 12px; // Match dialog content rounding
+  border-top-right-radius: 12px;
+  overflow: hidden; // Ensure iframe respects border radius
+}
+
+.videoFrame {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.videoPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: #aaaaaa;
+  background-color: #1c1c1c;
+}
+
+.detailsPanel {
+  padding: 16px; // User requested 12px, but 16px might look better with other elements. Can adjust.
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start; // Align items to the top of the row
+  margin-bottom: 12px;
+}
+
+.headerText {
+  flex-grow: 1;
+  margin-right: 16px; // Space before checkbox
+}
+
+/* Added to wrap exercise name and feedback icon */
+.exerciseNameContainer {
+  display: flex;
+  align-items: center; // Vertically align name and icon
+  gap: 8px; // Space between name and icon
+}
+
+.exerciseName {
+  font-size: 1.25rem; // Secondary header
+  font-weight: 600;
+  color: #f0f0f0; // Slightly off-white
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+}
+
+.repsText {
+  font-size: 1.75rem; // Large header text
+  font-weight: 700;
+  color: #ffd700; // Yellow color
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Styles for the feedback camera icon button */
+.feedbackButton {
+  background: none;
+  border: none;
+  color: #a0a0a0; // Muted color for the icon
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.feedbackButton:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.feedbackButton svg {
+  width: 20px; // Adjust size as needed
+  height: 20px;
+}
+
+.completionCheckboxRoot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; // Larger checkbox for better touch interaction
+  height: 32px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%; // Circular like the image
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  flex-shrink: 0; // Prevent checkbox from shrinking
+}
+
+.completionCheckboxRoot[data-state='checked'] {
+  background-color: #ffd700; // Yellow when checked
+  border-color: #ffd700;
+}
+
+.completionCheckboxRoot:focus-visible {
+  outline: 2px solid #ffd700;
+  outline-offset: 2px;
+}
+
+.completionCheckboxIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2d2d2d; // Dark icon color when checked
+}
+
+.completionCheckboxIndicator svg {
+  width: 20px; 
+  height: 20px;
+}
+
+.description {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #d0d0d0;
+  margin-bottom: 16px;
+  white-space: pre-wrap; // Respect newlines in description
+}
+
+.badgesRow {
+  display: flex;
+  flex-wrap: wrap; // Allow badges to wrap on smaller screens
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* Assuming Badge component itself has some styling, 
+   .badge class here can be used for overrides or container-specific adjustments if needed */
+.badge {
+  /* Example: Override badge margin if needed */
+  /* margin-right: 8px; */
+} 

@@ -5,7 +5,7 @@ import * as RadixCheckbox from "@radix-ui/react-checkbox";
 import * as RadixTabs from "@radix-ui/react-tabs";
 import { CheckIcon } from "@radix-ui/react-icons";
 import styles from "./ExerciseTile.module.scss"; // Import styles
-import { parseSetsAndReps } from "../lib/utils"; // Import the parser
+import { parseSetsAndReps, getDisplayableArrayString } from "../lib/utils"; // Import the parser and new utility
 // import * as Checkbox from '@radix-ui/react-checkbox'; // Will add later
 // import { CheckIcon } from '@radix-ui/react-icons'; // Will add later for checkbox
 // Import storage functions and type
@@ -93,23 +93,23 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({
 	const unit = blockExercise.unit;
 	const specialInstructions = blockExercise.special_instructions;
 
-	// Helper to parse potentially stringified arrays
-	const getDisplayableArrayString = (data: string | null | undefined): string => {
-		if (!data) return "";
-		try {
-			// Check if it looks like a stringified array (basic check)
-			if (data.startsWith("[") && data.endsWith("]")) {
-				const parsed = JSON.parse(data);
-				return Array.isArray(parsed) ? parsed.join(", ") : data;
-			}
-		} catch (e) {
-			// If parsing fails, return the original string
-			console.error("Failed to parse array string:", data, e);
-			return data;
-		}
-		// Return original data if not detected as stringified array
-		return data;
-	};
+	// Helper to parse potentially stringified arrays - REMOVED FROM HERE
+	// const getDisplayableArrayString = (data: string | null | undefined): string => {
+	// 	if (!data) return "";
+	// 	try {
+	// 		// Check if it looks like a stringified array (basic check)
+	// 		if (data.startsWith("[") && data.endsWith("]")) {
+	// 			const parsed = JSON.parse(data);
+	// 			return Array.isArray(parsed) ? parsed.join(", ") : data;
+	// 		}
+	// 	} catch (e) {
+	// 		// If parsing fails, return the original string
+	// 		console.error("Failed to parse array string:", data, e);
+	// 		return data;
+	// 	}
+	// 	// Return original data if not detected as stringified array
+	// 	return data;
+	// };
 
 	const typeDisplay = getDisplayableArrayString(exercise.over_sort_category);
 	const equipmentDisplay = getDisplayableArrayString(exercise.equipment_public_name);

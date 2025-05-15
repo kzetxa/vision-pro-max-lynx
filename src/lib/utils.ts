@@ -79,4 +79,28 @@ export function parseSetsAndReps(blockExercise: {
 
 	// 3. Fallback to default
 	return { sets: defaultSets, reps: defaultReps };
+}
+
+/**
+ * Helper to parse potentially stringified arrays (e.g., from Supabase text fields storing array-like strings).
+ * If the string looks like a JSON array, it tries to parse it and join elements with ", ".
+ * Otherwise, returns the original string or an empty string if input is null/undefined.
+ * @param data The string data to parse.
+ * @returns A displayable string.
+ */
+export function getDisplayableArrayString(data: string | null | undefined): string {
+	if (!data) return "";
+	try {
+		// Check if it looks like a stringified array (basic check)
+		if (data.startsWith("[") && data.endsWith("]")) {
+			const parsed = JSON.parse(data);
+			return Array.isArray(parsed) ? parsed.join(", ") : data;
+		}
+	} catch (e) {
+		// If parsing fails, return the original string
+		console.error("Failed to parse array string:", data, e);
+		return data;
+	}
+	// Return original data if not detected as stringified array
+	return data;
 } 

@@ -1,6 +1,6 @@
 import { makeObservable, observable, action, runInAction } from "mobx";
 import { fetchWorkoutDetailsById } from "../lib/api";
-import type { SupabasePopulatedWorkout, SupabaseBlockExercise } from "../lib/types";
+import type { SupabasePopulatedWorkout, SupabaseBlockExercise, SupabasePopulatedBlock } from "../lib/types";
 import {
 	loadWorkoutProgressFromStorage,
 	clearWorkoutProgressInStorage,
@@ -64,6 +64,21 @@ export class WorkoutPageStore {
 	_setAllExerciseProgress(progress: {[blockExerciseId: string]: ExerciseProgress}): void {
 		this.allExerciseProgress = progress;
 	}
+
+	// Method to calculate block completion progress
+	calculateBlockProgress = (block: SupabasePopulatedBlock): number => {
+		if (!block.block_exercises || block.block_exercises.length === 0) {
+			return 0; // Or 100 if an empty block is considered complete
+		}
+		const totalExercises = block.block_exercises.length;
+		let completedExercises = 0;
+		for (const be of block.block_exercises) {
+			if (this.allExerciseProgress[be.id]?.isExerciseDone) {
+				completedExercises++;
+			}
+		}
+		return totalExercises > 0 ? (completedExercises / totalExercises) * 100 : 0;
+	};
 
 	async initializePage(workoutId: string, clientId: string): Promise<void> {
 		if (this.currentWorkoutId === workoutId && !this.error && !this.loading && this.workoutData) {

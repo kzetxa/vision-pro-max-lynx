@@ -1,0 +1,142 @@
+/* ExerciseFeedbackDialog.module.scss */
+
+.dialogOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.3); // Slightly more transparent base
+  backdrop-filter: blur(5px); // Apply blur to the background
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60; // Ensure it's above ExerciseDetailDialog (z-index 50)
+  padding: 1rem;
+}
+
+.dialogContent {
+  background-color: rgba(45, 45, 45, 0.9); // Dark, slightly transparent content background
+  color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  max-width: 550px; // Slightly smaller than ExerciseDetailDialog
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 20px;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.closeButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border: none;
+  color: #e0e0e0;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.closeButton:hover {
+  background-color: rgba(0, 0, 0, 0.4);
+  color: #ffffff;
+}
+
+.closeButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #f5f5f5;
+}
+
+.section {
+  margin-bottom: 25px;
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #e0e0e0;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 5px;
+}
+
+.fileInput {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border: 1px dashed #666666;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #cccccc;
+  cursor: pointer;
+}
+
+.fileInput::-webkit-file-upload-button {
+  background: #ffd700;
+  color: #2d2d2d;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.uploadHint {
+  font-size: 0.85rem;
+  color: #aaaaaa;
+  text-align: center;
+}
+
+.feedbackTextarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #666666;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+}
+
+.feedbackTextarea:focus {
+  border-color: #ffd700;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.3);
+}
+
+.submitButton {
+  display: block;
+  width: 100%;
+  padding: 12px 20px;
+  background-color: #ffd700; // Yellow theme color
+  color: #2d2d2d; // Dark text for contrast
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.2s ease;
+  margin-top: 10px;
+}
+
+.submitButton:hover {
+  background-color: #e6c300; // Darker yellow on hover
+} 

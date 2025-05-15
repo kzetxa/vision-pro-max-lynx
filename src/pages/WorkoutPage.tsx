@@ -72,12 +72,7 @@ const WorkoutPage: React.FC = observer(() => {
 					/>
 				) : (
 					<WorkoutBlockDetail 
-						allExerciseProgress={workoutPageStore.allExerciseProgress}
 						blocks={workoutPageStore.workoutData.blocks}
-						clientId={clientId}
-						onExerciseCompleteInPage={handleExerciseCompleteInBlockViewer} // Pass the logging or no-op function
-						publicWorkoutTitle={workoutPageStore.workoutData.public_workout_title}
-						workoutId={workoutId!} // workoutId is confirmed to be present due to checks above
 					/>
 				)}
 				<FinishWorkoutDialog 

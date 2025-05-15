@@ -1,31 +1,57 @@
 import React from "react";
+import { observer } from "mobx-react-lite";
 import * as Checkbox from "@radix-ui/react-checkbox";
 import { CheckIcon, CameraIcon } from "@radix-ui/react-icons";
 import { useStore } from "../../contexts/StoreContext";
-import ExerciseFeedbackDialog from "./ExerciseFeedbackDialog"; // Assuming this is the correct path
-import styles from "./ExerciseDetailDialog.module.scss"; // Assuming styles are shared or specific
-import type { SupabaseExercise } from "../../lib/types";
+import ExerciseFeedbackDialog from "./ExerciseFeedbackDialog";
+import styles from "./ExerciseDetailDialog.module.scss";
+import type { ExerciseDetailDialogProps as ActiveDialogProps } from "./ExerciseDetailDialog"; // To get prop types
+// SupabaseExercise type might still be needed if ExerciseFeedbackDialog expects it and it's not part of details
 
-interface ExerciseDetailHeaderProps {
-  exerciseName: string;
-  repsText: string | null;
-  isComplete: boolean;
-  onToggleComplete: () => void;
-  exercise: SupabaseExercise; // For the feedback dialog
-  handleCheckboxClick: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
-  handleCheckboxKeyDown: (event: React.KeyboardEvent<HTMLButtonElement>) => void;
-}
+// Props are no longer passed to this component directly.
+interface ExerciseDetailHeaderProps {}
 
-const ExerciseDetailHeader: React.FC<ExerciseDetailHeaderProps> = ({
-	exerciseName,
-	repsText,
-	isComplete,
-	onToggleComplete, // This might not be directly used if using handleCheckboxClick
-	exercise,
-	handleCheckboxClick,
-	handleCheckboxKeyDown,
-}) => {
-	const { dialogStore } = useStore();
+const ExerciseDetailHeader: React.FC<ExerciseDetailHeaderProps> = observer(() => {
+	const { dialogStore, workoutPageStore } = useStore();
+
+	const activeDialogProps = dialogStore.activeDialog?.props as ActiveDialogProps | undefined;
+	const blockExerciseId = activeDialogProps?.blockExerciseId;
+
+	if (!blockExerciseId) {
+		return <div className={styles.headerRow}>Loading header...</div>; // Or some placeholder
+	}
+
+	const details = workoutPageStore.getFullExerciseDetailsForDialog(blockExerciseId);
+
+	if (!details || !details.exercise || !details.blockExercise) {
+		// Ensure exercise and blockExercise are present for feedback dialog and toggle action
+		return <div className={styles.headerRow}>Header data not available.</div>;
+	}
+
+	const { exerciseName, repsText, isComplete, exercise, blockExercise } = details;
+
+	const handleToggleCompletion = () => {
+		// Call the store action to toggle completion
+		// The existing action `handleToggleExerciseCompleteList` takes blockExerciseId and the exerciseDefinition
+		workoutPageStore.handleToggleExerciseCompleteList(blockExerciseId, blockExercise);
+	};
+
+	const handleCheckboxClick = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+		e.stopPropagation();
+		handleToggleCompletion();
+	};
+
+	const handleCheckboxKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+		if (e.key === " " || e.key === "Enter") {
+			e.stopPropagation();
+			handleToggleCompletion();
+		}
+	};
+
+	const handleFeedbackButtonClick = () => {
+		// Ensure exercise object is available before pushing dialog
+		dialogStore.pushDialog(ExerciseFeedbackDialog, { exercise });
+	};
 
 	return (
 		<div className={styles.headerRow}>
@@ -35,9 +61,7 @@ const ExerciseDetailHeader: React.FC<ExerciseDetailHeaderProps> = ({
 					<button
 						aria-label="Open feedback dialog"
 						className={styles.feedbackButton}
-						onClick={() =>
-							dialogStore.pushDialog(ExerciseFeedbackDialog, { exercise })
-						}
+						onClick={handleFeedbackButtonClick}
 					>
 						<CameraIcon />
 					</button>
@@ -57,6 +81,6 @@ const ExerciseDetailHeader: React.FC<ExerciseDetailHeaderProps> = ({
 			</Checkbox.Root>
 		</div>
 	);
-};
+});
 
 export default ExerciseDetailHeader; 

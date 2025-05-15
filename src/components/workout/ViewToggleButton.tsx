@@ -4,8 +4,8 @@ import { ListBulletIcon, GridIcon } from "@radix-ui/react-icons";
 import styles from "../../pages/WorkoutPage.module.scss"; // Use existing styles for now
 
 interface ViewToggleButtonProps {
-    isListView: boolean;
-    onToggle: () => void;
+	isListView: boolean;
+	onToggle: () => void;
 }
 
 const ViewToggleButton: React.FC<ViewToggleButtonProps> = observer(({ isListView, onToggle }) => {
@@ -19,12 +19,12 @@ const ViewToggleButton: React.FC<ViewToggleButtonProps> = observer(({ isListView
 				{isListView ? (
 					<>
 						<GridIcon style={{ marginRight: "0.5rem" }} />
-                        Grid View
+						Grid View
 					</>
 				) : (
 					<>
 						<ListBulletIcon style={{ marginRight: "0.5rem" }} />
-                        List View
+						List View
 					</>
 				)}
 			</button>

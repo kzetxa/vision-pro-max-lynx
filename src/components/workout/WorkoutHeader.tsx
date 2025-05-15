@@ -6,8 +6,8 @@ import Badge from "../Badge"; // Assuming Badge is in src/components/Badge.tsx
 import styles from "../../pages/WorkoutPage.module.scss"; // Use existing styles for now
 
 interface WorkoutHeaderProps {
-    workoutData: SupabasePopulatedWorkout;
-    // clientId?: string; // If needed in the future
+	workoutData: SupabasePopulatedWorkout;
+	// clientId?: string; // If needed in the future
 }
 
 const WorkoutHeader: React.FC<WorkoutHeaderProps> = observer(({ workoutData }) => {

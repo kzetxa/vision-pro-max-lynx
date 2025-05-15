@@ -1,12 +1,16 @@
-import { makeObservable, observable, action, runInAction } from "mobx";
+import { makeObservable, observable, action, runInAction, computed } from "mobx";
 import { fetchWorkoutDetailsById } from "../lib/api";
-import type { SupabasePopulatedWorkout, SupabaseBlockExercise, SupabasePopulatedBlock } from "../lib/types";
+import type { SupabasePopulatedWorkout, SupabaseBlockExercise, SupabasePopulatedBlock, SupabaseExercise } from "../lib/types";
 import {
 	loadWorkoutProgressFromStorage,
 	clearWorkoutProgressInStorage,
 	saveExerciseProgressToStorage,
 	type ExerciseProgress,
 } from "../lib/localStorage";
+import {
+	parseSetsAndReps,
+	getDisplayableArrayString,
+} from "../lib/utils";
 import type { RootStore } from "./RootStore";
 
 
@@ -46,6 +50,11 @@ export class WorkoutPageStore {
 			_setError: action,
 			_setAllExerciseProgress: action,
 			_clearError: action,
+
+			// Computed properties / getters
+			getBlockExerciseById: computed,
+			getExerciseById: computed,
+			getExerciseProgressState: computed,
 		});
 	}
 
@@ -174,4 +183,106 @@ export class WorkoutPageStore {
 		// alert("Workout progress cleared!"); 
 		this.isFinishDialogOpen = false;
 	};
+
+	// Start of new getters
+
+	get getBlockExerciseById() {
+		return (blockExerciseId: string): SupabaseBlockExercise | undefined => {
+			if (!this.workoutData) return undefined;
+			for (const block of this.workoutData.blocks) {
+				const foundBe = block.block_exercises.find((be) => be.id === blockExerciseId);
+				if (foundBe) return foundBe;
+			}
+			return undefined;
+		};
+	}
+
+	// This getter assumes SupabaseBlockExercise has a nested 'exercise' property of type SupabaseExercise.
+	// If not, and only exercise_id is available, this would need to search a flat list of exercises.
+	get getExerciseById() {
+		return (exerciseId: string): SupabaseExercise | undefined => {
+			if (!this.workoutData) return undefined;
+			for (const block of this.workoutData.blocks) {
+				for (const be of block.block_exercises) {
+					// Assuming be.exercise is the SupabaseExercise object or be.exercise_id exists
+					if (be.exercise && be.exercise.id === exerciseId) {
+						return be.exercise;
+					}
+					// If only be.exercise_id is present, this won't work directly without a flat list
+				}
+			}
+			return undefined;
+		};
+	}
+
+	get getExerciseProgressState() {
+		return (blockExerciseId: string): { isComplete: boolean } => {
+			const progress = this.allExerciseProgress[blockExerciseId];
+			return { isComplete: !!progress?.isExerciseDone };
+		};
+	}
+
+	// Comprehensive getter for dialog
+	// Not using @computed because it takes an argument. MobX getters with args are just methods.
+	getFullExerciseDetailsForDialog(blockExerciseId: string | null | undefined): {
+		exercise: SupabaseExercise | undefined;
+		blockExercise: SupabaseBlockExercise | undefined;
+		exerciseName: string;
+		vimeoCode: string | null | undefined;
+		repsText: string;
+		description: string;
+		exerciseType: string;
+		equipmentNeeded: string;
+		isComplete: boolean;
+	} | null {
+		if (!blockExerciseId) return null;
+
+		const blockExercise = this.getBlockExerciseById(blockExerciseId);
+		if (!blockExercise || !blockExercise.exercise) return null; // Ensure exercise is populated
+		const exercise = blockExercise.exercise; // Assuming exercise is nested
+
+		const exerciseName = exercise.current_name || "Unnamed Exercise";
+		const vimeoCode = exercise.vimeo_code;
+
+		const parsedRepsInfo = parseSetsAndReps(blockExercise);
+		let repsText = "";
+		if (parsedRepsInfo.reps > 0 && (!blockExercise.unit || blockExercise.unit.toLowerCase().includes("rep") || blockExercise.unit.trim() === "")) {
+			repsText = `${parsedRepsInfo.reps} reps`;
+			if (blockExercise.sets_and_reps_text && blockExercise.sets_and_reps_text.toLowerCase().includes("left side")) {
+				repsText += " Left Side";
+			} else if (blockExercise.sets_and_reps_text && blockExercise.sets_and_reps_text.toLowerCase().includes("right side")) {
+				repsText += " Right Side";
+			} else if (blockExercise.sets_and_reps_text && blockExercise.sets_and_reps_text.toLowerCase().includes("each side")) {
+				repsText += " each side";
+			}
+		} else if (blockExercise.sets_and_reps_text) {
+			repsText = blockExercise.sets_and_reps_text;
+		}
+
+		const description = [
+			exercise.explanation_1,
+			exercise.explanation_2,
+			exercise.explanation_3,
+			exercise.explanation_4,
+		]
+			.filter(Boolean)
+			.join(" ");
+
+		const exerciseType = getDisplayableArrayString(exercise.over_sort_category);
+		const equipmentNeeded = getDisplayableArrayString(exercise.equipment_public_name);
+		const { isComplete } = this.getExerciseProgressState(blockExerciseId);
+
+		return {
+			exercise,
+			blockExercise,
+			exerciseName,
+			vimeoCode,
+			repsText,
+			description,
+			exerciseType,
+			equipmentNeeded,
+			isComplete,
+		};
+	}
+	// End of new getters
 } 

@@ -1,18 +1,33 @@
 import React from "react";
-import Badge from "../Badge"; // Assuming Badge component path
-import styles from "./ExerciseDetailDialog.module.scss"; // Assuming styles are shared or specific
+import { observer } from "mobx-react-lite";
+import { useStore } from "../../contexts/StoreContext";
+import Badge from "../Badge";
+import styles from "./ExerciseDetailDialog.module.scss";
+import type { ExerciseDetailDialogProps as ActiveDialogProps } from "./ExerciseDetailDialog"; // To get prop types
 
-interface ExerciseInfoBadgesProps {
-	exerciseType?: string | null;
-	equipmentNeeded?: string | null;
-}
+// Props are no longer passed to this component directly.
+interface ExerciseInfoBadgesProps {}
 
-const ExerciseInfoBadges: React.FC<ExerciseInfoBadgesProps> = ({
-	exerciseType,
-	equipmentNeeded,
-}) => {
+const ExerciseInfoBadges: React.FC<ExerciseInfoBadgesProps> = observer(() => {
+	const { dialogStore, workoutPageStore } = useStore();
+
+	const activeDialogProps = dialogStore.activeDialog?.props as ActiveDialogProps | undefined;
+	const blockExerciseId = activeDialogProps?.blockExerciseId;
+
+	if (!blockExerciseId) {
+		return <div className={styles.badgesRow}>Loading badges...</div>; // Or null
+	}
+
+	const details = workoutPageStore.getFullExerciseDetailsForDialog(blockExerciseId);
+
+	if (!details) {
+		return <div className={styles.badgesRow}>Badge data not available.</div>; // Or null
+	}
+
+	const { exerciseType, equipmentNeeded } = details;
+
 	if (!exerciseType && !equipmentNeeded) {
-		return null; // Don't render the row if there are no badges
+		return null; // Don't render the row if there are no badges, consistent with original logic
 	}
 
 	return (
@@ -33,6 +48,6 @@ const ExerciseInfoBadges: React.FC<ExerciseInfoBadgesProps> = ({
 			)}
 		</div>
 	);
-};
+});
 
 export default ExerciseInfoBadges;

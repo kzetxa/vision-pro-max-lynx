@@ -19,7 +19,7 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 	isComplete,
 	onToggleComplete, 
 }) => {
-	const { dialogStore } = useStore();
+	const { dialogStore, workoutPageStore } = useStore();
 	const exercise = blockExercise.exercise;
 
 	if (!exercise || !exercise.current_name) {
@@ -49,19 +49,19 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 		textAlign: "center",
 	};
 
+	const handleRowClick = () => {
+		if (exercise) {
+			dialogStore.pushDialog(ExerciseDetailDialog, { 
+				blockExerciseId: blockExercise.id,
+				exerciseId: exercise.id,
+			});
+		}
+	};
+
 	return (
 		<div 
 			className={styles.accordionExerciseRow}
-			onClick={() => {
-				if (exercise) {
-					dialogStore.pushDialog(ExerciseDetailDialog, { 
-						exercise,
-						blockExercise,
-						isComplete,
-						onToggleComplete, 
-					});
-				}
-			}}
+			onClick={handleRowClick}
 			style={{ display: "flex", alignItems: "center", padding: "0.75rem 0", cursor: "pointer" }}
 		>
 			<div style={thumbnailStyle}>Image</div>

@@ -1,15 +1,31 @@
 import React from "react";
-import styles from "./ExerciseDetailDialog.module.scss"; // Assuming styles might be shared or specific
+import { observer } from "mobx-react-lite";
+import { useStore } from "../../contexts/StoreContext";
+import styles from "./ExerciseDetailDialog.module.scss";
+import type { ExerciseDetailDialogProps } from "./ExerciseDetailDialog"; // To get prop types for activeDialog
 
-interface ExerciseVideoPlayerProps {
-  vimeoCode?: string | null;
-  exerciseName: string;
-}
+// Props are no longer passed to this component directly.
+interface ExerciseVideoPlayerProps {}
 
-const ExerciseVideoPlayer: React.FC<ExerciseVideoPlayerProps> = ({
-	vimeoCode,
-	exerciseName,
-}) => {
+const ExerciseVideoPlayer: React.FC<ExerciseVideoPlayerProps> = observer(() => {
+	const { dialogStore, workoutPageStore } = useStore();
+
+	const activeDialogProps = dialogStore.activeDialog?.props as ExerciseDetailDialogProps | undefined;
+	const blockExerciseId = activeDialogProps?.blockExerciseId;
+
+	if (!blockExerciseId) {
+		// Render placeholder or nothing if ID is not available (e.g. dialog closing)
+		return <div className={styles.videoPanel}><div className={styles.videoPlaceholder}>Loading video...</div></div>;
+	}
+
+	const details = workoutPageStore.getFullExerciseDetailsForDialog(blockExerciseId);
+
+	if (!details) {
+		return <div className={styles.videoPanel}><div className={styles.videoPlaceholder}>Video details not available.</div></div>;
+	}
+
+	const { exerciseName, vimeoCode } = details;
+
 	return (
 		<div className={styles.videoPanel}>
 			{vimeoCode ? (
@@ -26,6 +42,6 @@ const ExerciseVideoPlayer: React.FC<ExerciseVideoPlayerProps> = ({
 			)}
 		</div>
 	);
-};
+});
 
 export default ExerciseVideoPlayer; 

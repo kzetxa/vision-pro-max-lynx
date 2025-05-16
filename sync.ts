@@ -35,6 +35,29 @@ const base = new Airtable({ apiKey: airtableApiKey }).base(airtableBaseId!);
 const supabase: SupabaseClient = createClient(supabaseUrl!, supabaseKey!);
 
 // ---- Type Definitions (for data mapping) ----
+
+// New Types for Airtable Attachments
+interface Thumbnail {
+	url: string;
+	width: number;
+	height: number;
+}
+
+interface AirtableAttachment {
+	id: string;
+	width: number;
+	height: number;
+	url: string;
+	filename: string;
+	size: number;
+	type: string;
+	thumbnails: {
+		small: Thumbnail;
+		large: Thumbnail;
+		full: Thumbnail;
+	};
+}
+
 interface AirtableExerciseFields {
 	"Current Name"?: string;
 	"Vimeo Code"?: string;
@@ -44,6 +67,7 @@ interface AirtableExerciseFields {
 	"Explination 2"?: string;
 	"Explanation 3"?: string; // Corrected spelling
 	"Explanation 4"?: string; // Corrected spelling
+	"Status (from look)"?: AirtableAttachment[]; // Added for thumbnails
 	[key: string]: any; // Index signature to satisfy Airtable's FieldSet constraint
 }
 
@@ -57,6 +81,12 @@ interface SupabaseExercise {
 	explanation_2?: string;
 	explanation_3?: string;
 	explanation_4?: string;
+	thumbnail_details?: { // Added for thumbnails
+		small: Thumbnail;
+		large: Thumbnail;
+		full: Thumbnail;
+		original_filename?: string;
+	};
 }
 
 interface AirtableBlocksOverviewFields {
@@ -273,7 +303,11 @@ async function syncExerciseLibrary() {
 	try {
 		await base('Exercise Library').select({
 			// Adjust fields if needed, or fetch all relevant ones
-			fields: ["Current Name", "Vimeo Code", "Public Name (from Equipment)", "Over Sort Category", "Explination 1", "Explination 2", "Explanation 3", "Explanation 4"]
+			fields: [
+				"Current Name", "Vimeo Code", "Public Name (from Equipment)", 
+				"Over Sort Category", "Explination 1", "Explination 2", 
+				"Explanation 3", "Explanation 4", "Status (from look)" // Added new field
+			]
 		}).eachPage((pageRecords, fetchNextPage) => {
 			pageRecords.forEach(record => airtableRecords.push(record as any)); // Cast needed if fields are strictly typed
 			fetchNextPage();
@@ -282,22 +316,40 @@ async function syncExerciseLibrary() {
 		console.log(`Fetched ${airtableRecords.length} records from Airtable Exercise Library.`);
 		if (airtableRecords.length === 0) return;
 
-		const supabaseExercises: SupabaseExercise[] = airtableRecords.map(record => ({
-			airtable_record_id: record.id,
-			current_name: record.fields["Current Name"],
-			vimeo_code: record.fields["Vimeo Code"],
-			equipment_public_name: record.fields["Public Name (from Equipment)"], // Adapt if it's a linked record ID
-			over_sort_category: record.fields["Over Sort Category"],
-			explanation_1: record.fields["Explination 1"],
-			explanation_2: record.fields["Explination 2"],
-			explanation_3: record.fields["Explanation 3"],
-			explanation_4: record.fields["Explanation 4"],
-		}));
+		const supabaseExercises: SupabaseExercise[] = airtableRecords.map(record => {
+			const attachments = record.fields["Status (from look)"];
+			let thumbnailData;
+			if (attachments && attachments.length > 0) {
+				const firstAttachment = attachments[0];
+				if (firstAttachment.thumbnails) { // Ensure thumbnails object exists
+					thumbnailData = {
+						small: firstAttachment.thumbnails.small,
+						large: firstAttachment.thumbnails.large,
+						full: firstAttachment.thumbnails.full,
+						original_filename: firstAttachment.filename,
+					};
+				}
+			}
+
+			return {
+				airtable_record_id: record.id,
+				current_name: record.fields["Current Name"],
+				vimeo_code: record.fields["Vimeo Code"],
+				equipment_public_name: record.fields["Public Name (from Equipment)"], // Adapt if it's a linked record ID
+				over_sort_category: record.fields["Over Sort Category"],
+				explanation_1: record.fields["Explination 1"],
+				explanation_2: record.fields["Explination 2"],
+				explanation_3: record.fields["Explanation 3"],
+				explanation_4: record.fields["Explanation 4"],
+				thumbnail_details: thumbnailData, // Added thumbnail data
+			};
+		});
 
 		const columns = [
 			'airtable_record_id', 'current_name', 'vimeo_code',
 			'equipment_public_name', 'over_sort_category',
-			'explanation_1', 'explanation_2', 'explanation_3', 'explanation_4'
+			'explanation_1', 'explanation_2', 'explanation_3', 'explanation_4',
+			'thumbnail_details' // Added new column
 		];
 		await upsertRecords('exercise_library', supabaseExercises, 'airtable_record_id', columns);
 

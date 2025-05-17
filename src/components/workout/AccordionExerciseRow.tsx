@@ -35,15 +35,25 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 		repsText = blockExercise.sets_and_reps_text;
 	}
 
-	const thumbnailStyle: React.CSSProperties = {
+	const imageContainerStyle: React.CSSProperties = {
 		width: 60,
 		height: 60,
 		borderRadius: 8,
-		backgroundColor: "#e0e0e0",
+		backgroundColor: "#e0e0e0", // Fallback background
 		display: "flex",
 		alignItems: "center",
 		justifyContent: "center",
 		marginRight: "1rem",
+		overflow: "hidden", // Ensure image respects border radius
+	};
+
+	const actualImageStyle: React.CSSProperties = {
+		width: "100%",
+		height: "100%",
+		objectFit: "cover", // Crop image to fit container
+	};
+
+	const placeholderTextStyle: React.CSSProperties = {
 		fontSize: "0.8em",
 		color: "#555",
 		textAlign: "center",
@@ -64,7 +74,17 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 			onClick={handleRowClick}
 			style={{ display: "flex", alignItems: "center", padding: "0.75rem 0", cursor: "pointer" }}
 		>
-			<div style={thumbnailStyle}>Image</div>
+			<div style={imageContainerStyle}>
+				{exercise.thumbnail_large_url ? (
+					<img
+						alt={exercise.current_name}
+						src={exercise.thumbnail_large_url}
+						style={actualImageStyle}
+					/>
+				) : (
+					<span style={placeholderTextStyle}>Image</span> // Fallback text
+				)}
+			</div>
 			<div style={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
 				<span className={styles.exerciseTitle}>{exercise.current_name}</span>
 				{repsText && (

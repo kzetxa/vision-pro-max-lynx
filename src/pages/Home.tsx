@@ -23,7 +23,7 @@ const Home: React.FC = () => {
 		console.log(`Attempting to load workouts for page ${currentPage}`);
 		// Note: Error state is reset in the calling effect
 		try {
-			const { workouts: newWorkouts, hasMore: newHasMore } = await fetchWorkoutsForHome(currentPage, PAGE_LIMIT);
+			const { workouts: newWorkouts, hasMore: newHasMore } = await fetchWorkoutsForHome(currentPage, PAGE_LIMIT, true);
 			// Use functional update to avoid stale state issues if loads happen very quickly
 			setWorkouts((prevWorkouts) => currentPage === 1 ? newWorkouts : [...prevWorkouts, ...newWorkouts]);
 			setHasMore(newHasMore);

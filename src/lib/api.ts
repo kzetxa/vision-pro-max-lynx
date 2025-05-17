@@ -44,20 +44,25 @@ const DEFAULT_PAGE_LIMIT = 10;
  * 
  * @param page The page number to fetch (1-indexed).
  * @param limit The number of items per page.
+ * @param excludeUntitled Whether to exclude workouts with null public_workout_title.
  * @returns An object containing the list of workouts for the page and a boolean indicating if more pages might exist.
  */
 export async function fetchWorkoutsForHome(
 	page: number = 1, 
 	limit: number = DEFAULT_PAGE_LIMIT,
+	excludeUntitled: boolean = false,
 ): Promise<{ workouts: SupabaseWorkoutPreview[]; hasMore: boolean }> {
 	console.log(`Fetching workouts page ${page} (limit ${limit}) for home page from Supabase...`);
-  
+	if (excludeUntitled) {
+		console.log("Excluding workouts with null public_workout_title.");
+	}
 	const startIndex = (page - 1) * limit;
 	const endIndex = startIndex + limit - 1;
 
-	const { data: workoutsData, error, count } = await supabase
+	let query = supabase
 		.from("workouts")
-		.select(`
+		.select(
+			`
       id,
       public_workout_title,
       header_image_url,
@@ -65,9 +70,17 @@ export async function fetchWorkoutsForHome(
       level,
       duration,
       block1:blocks_overview!block_1_id ( public_name ) 
-    `, { count: "exact" }) // Request total count for pagination logic
+    `,
+			{ count: "exact" },
+		); // Request total count for pagination logic
+
 	// Add filtering if needed, e.g., for published workouts
-	// .eq('status', 'published') 
+	// .eq('status', 'published')
+	if (excludeUntitled) {
+		query = query.not("public_workout_title", "is", null);
+	}
+
+	const { data: workoutsData, error, count } = await query
 		.order("created_at", { ascending: false })
 		.range(startIndex, endIndex); // Apply range for pagination
 

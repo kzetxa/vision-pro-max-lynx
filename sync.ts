@@ -8,25 +8,50 @@ import path from 'path'; // Import path for robust .env loading
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 console.log("Script starting...");
-console.log("AIRTABLE_API_KEY:", process.env.AIRTABLE_API_KEY ? 'Loaded' : 'MISSING!');
-console.log("AIRTABLE_BASE_ID:", process.env.AIRTABLE_BASE_ID ? 'Loaded' : 'MISSING!');
-// console.log("SUPABASE_DB_CONNECTION_STRING:", process.env.SUPABASE_DB_CONNECTION_STRING ? process.env.SUPABASE_DB_CONNECTION_STRING.substring(0,30) + '...' : 'MISSING!'); // Log only part of the string for security
-console.log("SUPABASE_URL:", process.env.SUPABASE_URL ? 'Loaded' : 'MISSING!');
-console.log("SUPABASE_ANON_KEY:", process.env.SUPABASE_ANON_KEY ? 'Loaded' : 'MISSING!');
 
+// ---- Argument Parsing for --local flag ----
+const args = process.argv.slice(2); // Skip node executable and script path
+const useLocalSupabase = args.includes('--local');
+
+if (useLocalSupabase) {
+	console.log("Using LOCAL Supabase instance.");
+} else {
+	console.log("Using REMOTE Supabase instance (default).");
+}
 
 // ---- Configuration ----
 const airtableApiKey = process.env.AIRTABLE_API_KEY;
 const airtableBaseId = process.env.AIRTABLE_BASE_ID;
 // const supabaseConnectionString = process.env.SUPABASE_DB_CONNECTION_STRING;
-const supabaseUrl = process.env.SUPABASE_URL;
-// For scripts like this, a service role key is preferred over an anon key.
-// const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
+// Conditionally set Supabase credentials
+let supabaseUrl: string | undefined;
+let supabaseKey: string | undefined;
+
+if (useLocalSupabase) {
+	supabaseUrl = process.env.LOCAL_SUPABASE_URL;
+	supabaseKey = process.env.LOCAL_SUPABASE_ANON_KEY;
+	console.log("LOCAL_SUPABASE_URL:", supabaseUrl ? 'Loaded' : 'MISSING!');
+	console.log("LOCAL_SUPABASE_ANON_KEY:", supabaseKey ? 'Loaded' : 'MISSING!');
+} else {
+	supabaseUrl = process.env.SUPABASE_URL;
+	supabaseKey = process.env.SUPABASE_ANON_KEY;
+	console.log("SUPABASE_URL:", supabaseUrl ? 'Loaded' : 'MISSING!');
+	console.log("SUPABASE_ANON_KEY:", supabaseKey ? 'Loaded' : 'MISSING!');
+}
+
+console.log("AIRTABLE_API_KEY:", airtableApiKey ? 'Loaded' : 'MISSING!');
+console.log("AIRTABLE_BASE_ID:", airtableBaseId ? 'Loaded' : 'MISSING!');
+// console.log("SUPABASE_DB_CONNECTION_STRING:", process.env.SUPABASE_DB_CONNECTION_STRING ? process.env.SUPABASE_DB_CONNECTION_STRING.substring(0,30) + '...' : 'MISSING!'); // Log only part of the string for security
 
 if (!airtableApiKey || !airtableBaseId || !supabaseUrl || !supabaseKey) {
-	console.error("Missing required environment variables! Check .env file. Required: AIRTABLE_API_KEY, AIRTABLE_BASE_ID, SUPABASE_URL, SUPABASE_ANON_KEY.");
+	let errorMessage = "Missing required environment variables! Check .env file. Required: AIRTABLE_API_KEY, AIRTABLE_BASE_ID";
+	if (useLocalSupabase) {
+		errorMessage += ", LOCAL_SUPABASE_URL, LOCAL_SUPABASE_ANON_KEY.";
+	} else {
+		errorMessage += ", SUPABASE_URL, SUPABASE_ANON_KEY.";
+	}
+	console.error(errorMessage);
 	process.exit(1);
 }
 
@@ -58,35 +83,34 @@ interface AirtableAttachment {
 	};
 }
 
+// Simplified to fetch only necessary fields from Airtable
 interface AirtableExerciseFields {
 	"Current Name"?: string;
-	"Vimeo Code"?: string;
-	"Public Name (from Equipment)"?: string; // Assuming this is how it comes from Airtable
+	"vimeo video"?: string; // Source for vimeo_code
+	"Public Name (from Equipment)"?: string[]; 
 	"Over Sort Category"?: string;
-	"Explination 1"?: string; // Note: Airtable specific spelling
+	"Explination 1"?: string; 
 	"Explination 2"?: string;
-	"Explanation 3"?: string; // Corrected spelling
-	"Explanation 4"?: string; // Corrected spelling
-	"Status (from look)"?: AirtableAttachment[]; // Added for thumbnails
-	[key: string]: any; // Index signature to satisfy Airtable's FieldSet constraint
+	"Explanation 3"?: string; 
+	"Explanation 4"?: string; 
+	"Status (from look)"?: AirtableAttachment[]; // Source for thumbnails
+	[key: string]: any; 
 }
 
+// Simplified to only include the target Supabase columns
 interface SupabaseExercise {
 	airtable_record_id: string;
 	current_name?: string;
 	vimeo_code?: string;
-	equipment_public_name?: string;
+	equipment_public_name?: string; 
 	over_sort_category?: string;
-	explanation_1?: string; // Correct spelling for Supabase
+	explanation_1?: string;
 	explanation_2?: string;
 	explanation_3?: string;
 	explanation_4?: string;
-	thumbnail_details?: { // Added for thumbnails
-		small: Thumbnail;
-		large: Thumbnail;
-		full: Thumbnail;
-		original_filename?: string;
-	};
+	thumbnail_small_url?: string;
+	thumbnail_large_url?: string; // Corresponds to Airtable's "large" thumbnail
+	thumbnail_full_url?: string;
 }
 
 interface AirtableBlocksOverviewFields {
@@ -174,38 +198,28 @@ async function upsertRecords(
 		return;
 	}
 
-	// const client = await pool.connect(); // Not needed with supabase-js
 	try {
-		// await client.query('BEGIN'); // Supabase upsert handles transactions implicitly for the operation
-
-		// Supabase client's upsert method
-		// The `records` should be an array of objects matching Supabase table structure.
-		// `conflictColumn` is used in the `onConflict` option.
 		const { data, error } = await supabase
 			.from(tableName)
 			.upsert(records, {
 				onConflict: conflictColumn,
-				// returning: 'minimal', // Supabase default is 'representation', which returns the upserted records. 'minimal' returns nothing.
 			});
 
 		if (error) {
-			console.error(`Error upserting into ${tableName}:`, error);
-			// await client.query('ROLLBACK'); // Handled by Supabase or not applicable
-			throw error; // Re-throw to stop the script or handle higher up
+			console.error(`Error upserting into ${tableName}:`);
+			console.error(`  Message: ${error.message}`);
+			console.error(`  Details: ${error.details}`);
+			console.error(`  Hint: ${error.hint}`);
+			console.error(`  Code: ${error.code}`);
+			throw error;
 		}
 
-		// await client.query('COMMIT');
 		console.log(`Successfully upserted ${records.length} records into ${tableName}.`);
-	} catch (error) {
-		// If error was not thrown by supabase client already, log it
-		// if (!(error instanceof Error && 'message' in error && error.message.includes('PostgrestError'))) {
-		//  console.error(`Unhandled error during upsert into ${tableName}:`, error);
-		// }
-		// Rollback is not explicitly managed here with Supabase client for single upsert operations.
-		// The operation either succeeds or fails.
-		throw error; // Re-throw
-	} finally {
-		// client.release(); // Not needed
+	} catch (error: any) {
+		if (!(error && error.message && error.details)) {
+			console.error(`Unhandled error during upsert into ${tableName}:`, error);
+		}
+		throw error;
 	}
 }
 
@@ -249,46 +263,24 @@ async function selectAll(tableName: string, columns: string): Promise<any[]> {
 async function buildIdMap(tableName: string, airtableIdColumn: string = 'airtable_record_id', supabaseIdColumn: string = 'id'): Promise<Map<string, string>> {
 	console.log(`[buildIdMap] Building ID map for ${tableName}.`);
 	const idMap = new Map<string, string>();
-	// let client; // Not needed
 	try {
-		// client = await pool.connect(); // Not needed
-		// console.log(`[buildIdMap] Connected to DB for table ${tableName}. Fetching IDs...`); 
-		// const res = await client.query(`SELECT ${airtableIdColumn}, ${supabaseIdColumn} FROM public.${tableName}`);
-
-		// const { data, error } = await supabase
-		// 	.from(tableName)
-		// 	.select(`${supabaseIdColumn}, ${airtableIdColumn}`);
-
-		// Use selectAll helper to ensure all rows are fetched
 		const data = await selectAll(tableName, `${supabaseIdColumn}, ${airtableIdColumn}`);
 
-		// if (error) { // Error handling is now within selectAll or caught below
-		// 	console.error(`[buildIdMap] Error fetching IDs for ${tableName}:`, error);
-		// 	throw error; // Propagate the error
-		// }
-
 		if (data) {
-			data.forEach((row: any) => { // Add :any type for row if Supabase types are not explicitly defined here
+			data.forEach((row: any) => {
 				if (row[airtableIdColumn] && row[supabaseIdColumn]) {
 					idMap.set(row[airtableIdColumn], row[supabaseIdColumn]);
 				} else {
-					// Add a warning if a row is missing one of the IDs, might indicate data issues
 					console.warn(`[buildIdMap] Row in ${tableName} missing expected ID columns (airtableId: ${row[airtableIdColumn]}, supabaseId: ${row[supabaseIdColumn]}):`, row);
 				}
 			});
 		}
 
 	} catch (error) {
-		// Error already logged or will be logged by the caller if re-thrown
-		// console.error(`[buildIdMap] Error building ID map for ${tableName}:`, error);
-		// Re-throw if not already a Supabase error, or let it propagate
-		// Check if the error message indicates it originated from selectAll to avoid double logging
 		if (!(error instanceof Error && (error.message.includes('[selectAll]') || error.message.includes('Error fetching IDs')))) {
 			console.error(`[buildIdMap] Unhandled error building ID map for ${tableName}:`, error);
 		}
-		throw error; // Ensure errors are propagated
-	} finally {
-		// if (client) client.release(); // Not needed
+		throw error;
 	}
 	console.log(`[buildIdMap] Finished for ${tableName}. Found ${idMap.size} entries.`);
 	return idMap;
@@ -302,14 +294,16 @@ async function syncExerciseLibrary() {
 
 	try {
 		await base('Exercise Library').select({
-			// Adjust fields if needed, or fetch all relevant ones
 			fields: [
-				"Current Name", "Vimeo Code", "Public Name (from Equipment)", 
-				"Over Sort Category", "Explination 1", "Explination 2", 
-				"Explanation 3", "Explanation 4", "Status (from look)" // Added new field
+				"Current Name", 
+				"vimeo video",
+				"Public Name (from Equipment)", 
+				"Over Sort Category", 
+				"Explination 1", "Explination 2", "Explanation 3", "Explanation 4", 
+				"Status (from look)"
 			]
 		}).eachPage((pageRecords, fetchNextPage) => {
-			pageRecords.forEach(record => airtableRecords.push(record as any)); // Cast needed if fields are strictly typed
+			pageRecords.forEach(record => airtableRecords.push(record as any));
 			fetchNextPage();
 		});
 
@@ -318,44 +312,55 @@ async function syncExerciseLibrary() {
 
 		const supabaseExercises: SupabaseExercise[] = airtableRecords.map(record => {
 			const attachments = record.fields["Status (from look)"];
-			let thumbnailData;
+			let thumbSmallUrl, thumbLargeUrl, thumbFullUrl;
 			if (attachments && attachments.length > 0) {
 				const firstAttachment = attachments[0];
-				if (firstAttachment.thumbnails) { // Ensure thumbnails object exists
-					thumbnailData = {
-						small: firstAttachment.thumbnails.small,
-						large: firstAttachment.thumbnails.large,
-						full: firstAttachment.thumbnails.full,
-						original_filename: firstAttachment.filename,
-					};
+				if (firstAttachment.thumbnails) {
+					thumbSmallUrl = firstAttachment.thumbnails.small?.url;
+					thumbLargeUrl = firstAttachment.thumbnails.large?.url;
+					thumbFullUrl  = firstAttachment.thumbnails.full?.url;
 				}
 			}
+
+			let vimeoCodeValue;
+			const vimeoVideoField = record.fields["vimeo video"];
+			if (typeof vimeoVideoField === 'string' && vimeoVideoField.includes('vimeo.com')) {
+				const match = vimeoVideoField.match(/vimeo\.com\/(\d+)/);
+				if (match && match[1]) {
+					vimeoCodeValue = match[1];
+				}
+			} else if (typeof vimeoVideoField === 'number') {
+				vimeoCodeValue = String(vimeoVideoField);
+			}
+
+			const publicNameFromEquipment = record.fields["Public Name (from Equipment)"];
 
 			return {
 				airtable_record_id: record.id,
 				current_name: record.fields["Current Name"],
-				vimeo_code: record.fields["Vimeo Code"],
-				equipment_public_name: record.fields["Public Name (from Equipment)"], // Adapt if it's a linked record ID
+				vimeo_code: vimeoCodeValue,
+				equipment_public_name: Array.isArray(publicNameFromEquipment) ? publicNameFromEquipment.join(', ') : publicNameFromEquipment,
 				over_sort_category: record.fields["Over Sort Category"],
 				explanation_1: record.fields["Explination 1"],
 				explanation_2: record.fields["Explination 2"],
 				explanation_3: record.fields["Explanation 3"],
 				explanation_4: record.fields["Explanation 4"],
-				thumbnail_details: thumbnailData, // Added thumbnail data
+				thumbnail_small_url: thumbSmallUrl,
+				thumbnail_large_url: thumbLargeUrl,
+				thumbnail_full_url: thumbFullUrl,
 			};
 		});
 
 		const columns = [
-			'airtable_record_id', 'current_name', 'vimeo_code',
-			'equipment_public_name', 'over_sort_category',
-			'explanation_1', 'explanation_2', 'explanation_3', 'explanation_4',
-			'thumbnail_details' // Added new column
+			'airtable_record_id', 'current_name', 'vimeo_code', 'equipment_public_name',
+			'over_sort_category', 'explanation_1', 'explanation_2', 'explanation_3', 'explanation_4',
+			'thumbnail_small_url', 'thumbnail_large_url', 'thumbnail_full_url'
 		];
 		await upsertRecords('exercise_library', supabaseExercises, 'airtable_record_id', columns);
 
 	} catch (error) {
 		console.error("Error syncing Exercise Library:", error);
-		throw error; // Re-throw to be caught by main
+		throw error;
 	}
 }
 
@@ -388,15 +393,12 @@ async function syncBlocksOverview() {
 
 	} catch (error) {
 		console.error("Error syncing Blocks Overview:", error);
-		throw error; // Re-throw
+		throw error;
 	}
 }
 
 async function syncIndividualBlocks(exerciseIdMap: Map<string, string>, blockOverviewIdMap: Map<string, string>) {
 	console.log("Starting sync for Individual Blocks...");
-
-	// ID maps are now passed in, no need to check if both are empty here as main will build them.
-	// It's up to the calling function to ensure maps are adequately populated.
 
 	const airtableRecords: Airtable.Record<AirtableIndividualBlockFields>[] = [];
 
@@ -448,7 +450,7 @@ async function syncIndividualBlocks(exerciseIdMap: Map<string, string>, blockOve
 
 	} catch (error) {
 		console.error("Error syncing Individual Blocks:", error);
-		throw error; // Re-throw
+		throw error;
 	}
 }
 
@@ -520,13 +522,12 @@ async function syncWorkouts(blockOverviewIdMap: Map<string, string>) {
 
 	} catch (error) {
 		console.error("Error syncing Workouts:", error);
-		throw error; // Re-throw
+		throw error;
 	}
 }
 
 async function main() {
 	try {
-		// Sync tables first
 		console.log("Starting sync for exercise_library...");
 		await syncExerciseLibrary();
 		console.log("Finished sync for exercise_library.");
@@ -535,13 +536,11 @@ async function main() {
 		await syncBlocksOverview();
 		console.log("Finished sync for blocks_overview.");
 
-		// Build ID maps *after* syncing the base tables
 		console.log("Building ID maps...");
 		const exerciseIdMap = await buildIdMap('exercise_library');
 		const blockOverviewIdMap = await buildIdMap('blocks_overview');
 		console.log("Finished building ID maps.");
 
-		// Sync dependent tables using the fresh ID maps
 		console.log("Starting sync for individual_blocks...");
 		await syncIndividualBlocks(exerciseIdMap, blockOverviewIdMap);
 		console.log("Finished sync for individual_blocks.");
@@ -551,17 +550,20 @@ async function main() {
 		console.log("Finished sync for workouts.");
 
 		console.log("Sync process completed successfully.");
-	} catch (error) {
+	} catch (error: any) {
 		console.error("Main sync process failed overall:");
-		if (error instanceof Error) {
-			console.error("Error Name:", error.name);
-			console.error("Error Message:", error.message);
-			console.error("Error Stack:", error.stack);
+		if (error && error.message) {
+			console.error("  Error Name:", error.name || 'N/A');
+			console.error("  Error Message:", error.message);
+			if (error.details) console.error("  Error Details:", error.details);
+			if (error.hint) console.error("  Error Hint:", error.hint);
+			if (error.code) console.error("  Error Code:", error.code);
+			if (error.stack) console.error("  Error Stack:", error.stack);
 		} else {
-			console.error("Raw Error:", error);
+			console.error("  Raw Error:", error);
 		}
 	} finally {
-		// await pool.end(); // Close the connection pool // Not needed for supabase-js client
+		// await pool.end();
 	}
 }
 

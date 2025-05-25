@@ -20,36 +20,36 @@ if (useLocalSupabase) {
 }
 
 // ---- Configuration ----
-const airtableApiKey = process.env.AIRTABLE_API_KEY;
-const airtableBaseId = process.env.AIRTABLE_BASE_ID;
-// const supabaseConnectionString = process.env.SUPABASE_DB_CONNECTION_STRING;
+const airtableApiKey = process.env.VITE_AIRTABLE_API_KEY;
+const airtableBaseId = process.env.VITE_AIRTABLE_BASE_ID;
+// const supabaseConnectionString = process.env.VITE_SUPABASE_DB_CONNECTION_STRING;
 
 // Conditionally set Supabase credentials
 let supabaseUrl: string | undefined;
 let supabaseKey: string | undefined;
 
 if (useLocalSupabase) {
-	supabaseUrl = process.env.LOCAL_SUPABASE_URL;
-	supabaseKey = process.env.LOCAL_SUPABASE_ANON_KEY;
-	console.log("LOCAL_SUPABASE_URL:", supabaseUrl ? 'Loaded' : 'MISSING!');
-	console.log("LOCAL_SUPABASE_ANON_KEY:", supabaseKey ? 'Loaded' : 'MISSING!');
+	supabaseUrl = process.env.VITE_LOCAL_SUPABASE_URL;
+	supabaseKey = process.env.VITE_LOCAL_SUPABASE_ANON_KEY;
+	console.log("VITE_LOCAL_SUPABASE_URL:", supabaseUrl ? 'Loaded' : 'MISSING!');
+	console.log("VITE_LOCAL_SUPABASE_ANON_KEY:", supabaseKey ? 'Loaded' : 'MISSING!');
 } else {
-	supabaseUrl = process.env.SUPABASE_URL;
-	supabaseKey = process.env.SUPABASE_ANON_KEY;
-	console.log("SUPABASE_URL:", supabaseUrl ? 'Loaded' : 'MISSING!');
-	console.log("SUPABASE_ANON_KEY:", supabaseKey ? 'Loaded' : 'MISSING!');
+	supabaseUrl = process.env.VITE_SUPABASE_URL;
+	supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+	console.log("VITE_SUPABASE_URL:", supabaseUrl ? 'Loaded' : 'MISSING!');
+	console.log("VITE_SUPABASE_ANON_KEY:", supabaseKey ? 'Loaded' : 'MISSING!');
 }
 
-console.log("AIRTABLE_API_KEY:", airtableApiKey ? 'Loaded' : 'MISSING!');
-console.log("AIRTABLE_BASE_ID:", airtableBaseId ? 'Loaded' : 'MISSING!');
-// console.log("SUPABASE_DB_CONNECTION_STRING:", process.env.SUPABASE_DB_CONNECTION_STRING ? process.env.SUPABASE_DB_CONNECTION_STRING.substring(0,30) + '...' : 'MISSING!'); // Log only part of the string for security
+console.log("VITE_AIRTABLE_API_KEY:", airtableApiKey ? 'Loaded' : 'MISSING!');
+console.log("VITE_AIRTABLE_BASE_ID:", airtableBaseId ? 'Loaded' : 'MISSING!');
+// console.log("VITE_SUPABASE_DB_CONNECTION_STRING:", process.env.VITE_SUPABASE_DB_CONNECTION_STRING ? process.env.VITE_SUPABASE_DB_CONNECTION_STRING.substring(0,30) + '...' : 'MISSING!'); // Log only part of the string for security
 
 if (!airtableApiKey || !airtableBaseId || !supabaseUrl || !supabaseKey) {
-	let errorMessage = "Missing required environment variables! Check .env file. Required: AIRTABLE_API_KEY, AIRTABLE_BASE_ID";
+	let errorMessage = "Missing required environment variables! Check .env file. Required: VITE_AIRTABLE_API_KEY, VITE_AIRTABLE_BASE_ID";
 	if (useLocalSupabase) {
-		errorMessage += ", LOCAL_SUPABASE_URL, LOCAL_SUPABASE_ANON_KEY.";
+		errorMessage += ", VITE_LOCAL_SUPABASE_URL, VITE_LOCAL_SUPABASE_ANON_KEY.";
 	} else {
-		errorMessage += ", SUPABASE_URL, SUPABASE_ANON_KEY.";
+		errorMessage += ", VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY.";
 	}
 	console.error(errorMessage);
 	process.exit(1);

@@ -9,21 +9,21 @@ import type {
   Exercise
 } from "../src/lib/types";
 
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = 'appp2JjMRlSvTyvVY';
+const VITE_AIRTABLE_API_KEY = process.env.VITE_AIRTABLE_API_KEY;
+const VITE_AIRTABLE_BASE_ID = 'appp2JjMRlSvTyvVY';
 const AIRTABLE_TABLE_ID_WORKOUTS = 'tblqdC3fWyvyFMBxv';
 const AIRTABLE_TABLE_ID_BLOCKS = 'tbloYDsl2c56zGndO';
 const AIRTABLE_TABLE_ID_EXERCISES = 'tbl8PKDZMG5nv73Hx';
 
 // Helper function to fetch a single record by ID
 async function fetchAirtableRecord<TFields>(tableId: string, recordId: string): Promise<AirtableRecord<TFields> | null> {
-  if (!AIRTABLE_API_KEY) {
+  if (!VITE_AIRTABLE_API_KEY) {
     console.error(`Airtable API key not configured for fetchAirtableRecord (table: ${tableId}, record: ${recordId}).`);
     return null;
   }
-  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${tableId}/${recordId}`;
+  const url = `https://api.airtable.com/v0/${VITE_AIRTABLE_BASE_ID}/${tableId}/${recordId}`;
   try {
-    const response = await fetch(url, { headers: { 'Authorization': `Bearer ${AIRTABLE_API_KEY}` } });
+    const response = await fetch(url, { headers: { 'Authorization': `Bearer ${VITE_AIRTABLE_API_KEY}` } });
     if (!response.ok) {
       if (response.status === 404) return null;
       console.error(`Airtable API Error fetching record ${recordId} from ${tableId}: ${response.status} - ${await response.text()}`);
@@ -66,7 +66,7 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
   if (event.httpMethod !== 'GET') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
-  if (!AIRTABLE_API_KEY) {
+  if (!VITE_AIRTABLE_API_KEY) {
     console.error('Airtable API key not configured.');
     return { statusCode: 500, body: 'Airtable API key not configured.' };
   }

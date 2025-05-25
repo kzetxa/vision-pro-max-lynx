@@ -4,8 +4,8 @@ import type {
   WorkoutFields
 } from "../src/lib/types";
 
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = 'appp2JjMRlSvTyvVY';
+const VITE_AIRTABLE_API_KEY = process.env.VITE_AIRTABLE_API_KEY;
+const VITE_AIRTABLE_BASE_ID = 'appp2JjMRlSvTyvVY';
 const AIRTABLE_TABLE_ID_WORKOUTS = 'tblqdC3fWyvyFMBxv';
 const AIRTABLE_VIEW_WORKOUT_PROTO = 'workout-proto';
 
@@ -14,16 +14,16 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  if (!AIRTABLE_API_KEY) {
+  if (!VITE_AIRTABLE_API_KEY) {
     console.error('Airtable API key not configured.');
     return { statusCode: 500, body: 'Airtable API key not configured.' };
   }
 
-  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID_WORKOUTS}?view=${AIRTABLE_VIEW_WORKOUT_PROTO}`;
+  const url = `https://api.airtable.com/v0/${VITE_AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID_WORKOUTS}?view=${AIRTABLE_VIEW_WORKOUT_PROTO}`;
 
   try {
     const response = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${AIRTABLE_API_KEY}` },
+      headers: { 'Authorization': `Bearer ${VITE_AIRTABLE_API_KEY}` },
     });
 
     if (!response.ok) {

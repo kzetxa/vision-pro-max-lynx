@@ -3,11 +3,11 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const supabaseConnectionString = process.env.SUPABASE_DB_CONNECTION_STRING;
+const supabaseConnectionString = process.env.VITE_SUPABASE_DB_CONNECTION_STRING;
 console.log("Attempting to connect with:", supabaseConnectionString);
 
 if (!supabaseConnectionString) {
-	console.error("SUPABASE_DB_CONNECTION_STRING is not set in .env");
+	console.error("VITE_SUPABASE_DB_CONNECTION_STRING is not set in .env");
 	process.exit(1);
 }
 

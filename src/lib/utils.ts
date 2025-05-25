@@ -110,4 +110,20 @@ export function getDisplayableArrayString(data: string | null | undefined): stri
 	}
 	// Return original data if not detected as stringified array
 	return data;
+}
+
+/**
+ * Gets the client ID from URL query parameters.
+ * Falls back to a default test ID if not found.
+ * 
+ * @returns The client ID from URL parameters or a default test ID.
+ */
+export function getClientIdFromUrl(): string {
+	const queryParams = new URLSearchParams(window.location.search);
+	const idFromUrl = queryParams.get("clientId");
+	if (idFromUrl) {
+		return idFromUrl;
+	}
+	console.warn("clientId not found in URL query parameters. Using default test ID.");
+	return "test-client-id";
 } 

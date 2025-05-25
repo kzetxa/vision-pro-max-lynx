@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import styles from "./FileUpload.module.scss";
 import { PlusIcon } from "@radix-ui/react-icons"; // Or any other plus icon source
-import { uploadVideoToVimeo } from "../../lib/vimeoUtils"; // Adjust path if necessary
+import { uploadVideoToVimeo, VimeoUploadResponse } from "../../lib/vimeoUtils"; // Adjust path and import VimeoUploadResponse
 
 interface FileUploadProps {
   // Optional: Callback for when upload is fully complete, returning video ID or error
-  onUploadComplete?: (result: { videoId?: string; error?: string }) => void;
+  onUploadComplete?: (result: VimeoUploadResponse) => void; // Use VimeoUploadResponse type
   // You can add more specific callbacks for different stages if needed
 }
 

@@ -54,14 +54,14 @@ README.md                     # This file
     ```dotenv
     # Required for the frontend application
     VITE_SUPABASE_URL="your_supabase_project_url"
-    VITE_SUPABASE_ANON_KEY="your_supabase_anon_key"
+    VITE_SUPABASE_ANON_KEY="your_VITE_SUPABASE_ANON_KEY"
 
     # Required ONLY for running the sync script (scripts/sync.ts)
-    AIRTABLE_API_KEY="your_airtable_api_key"
-    AIRTABLE_BASE_ID="your_airtable_base_id"
+    VITE_AIRTABLE_API_KEY="your_VITE_AIRTABLE_API_KEY"
+    VITE_AIRTABLE_BASE_ID="your_VITE_AIRTABLE_BASE_ID"
     # Example: AIRTABLE_TABLE_NAMES='{"exercises": "Exercise Library", "blocksOverview": "Blocks Overview", "individualBlocks": "Individual Blocks", "workouts": "Workouts"}'
     AIRTABLE_TABLE_NAMES='your_airtable_table_names_json_string'
-    SUPABASE_URL="your_supabase_project_url" # Yes, needed again for the script
+    VITE_SUPABASE_URL="your_supabase_project_url" # Yes, needed again for the script
     SUPABASE_SERVICE_ROLE_KEY="your_supabase_service_role_key" # Service role key needed for upserting
     ```
     *   `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are exposed to the frontend client (safe).

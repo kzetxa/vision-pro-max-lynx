@@ -1,18 +1,18 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 // import type { Exercise } from '../lib/types'; // Old Airtable Type
-import type { SupabaseBlockExercise, SupabaseExercise } from "../lib/types"; // New Supabase Type
 import * as RadixCheckbox from "@radix-ui/react-checkbox";
 import { CheckIcon } from "@radix-ui/react-icons";
+import type { SupabaseBlockExercise, SupabaseExercise } from "../../lib/types"; // New Supabase Type
+import { getDisplayableArrayString, parseSetsAndReps } from "../../lib/utils"; // Import the parser and new utility
 import styles from "./ExerciseTile.module.scss"; // Import styles
-import { parseSetsAndReps, getDisplayableArrayString } from "../lib/utils"; // Import the parser and new utility
 // import * as Checkbox from '@radix-ui/react-checkbox'; // Will add later
 // import { CheckIcon } from '@radix-ui/react-icons'; // Will add later for checkbox
 // Import storage functions and type
 import {
-	saveExerciseProgressToStorage,
-	ExerciseProgress 
-} from "../lib/localStorage"; 
-import Badge from "./Badge"; // Import Badge component
+	ExerciseProgress,
+	saveExerciseProgressToStorage
+} from "../../lib/localStorage";
+import Badge from "../Badge/Badge"; // Import Badge component
 
 interface ExerciseTileProps {
   // exercise: Exercise; // Old Airtable Type

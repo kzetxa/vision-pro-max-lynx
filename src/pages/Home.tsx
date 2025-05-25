@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { fetchWorkoutsForHome } from "../lib/api"; // New Supabase API call
 import type { SupabaseWorkoutPreview } from "../lib/types"; // New Supabase type
-import WorkoutCard from "../components/WorkoutCard";
+import WorkoutCard from "../components/WorkoutCard/WorkoutCard";
 import styles from "./Home.module.scss"; // Import the SCSS module
 
 const PAGE_LIMIT = 10;

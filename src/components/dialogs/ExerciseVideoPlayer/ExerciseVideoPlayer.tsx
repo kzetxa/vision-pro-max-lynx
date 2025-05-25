@@ -1,35 +1,42 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
-import { useStore } from "../../contexts/StoreContext";
-import styles from "./ExerciseDetailDialog.module.scss";
-import type { ExerciseDetailDialogProps } from "./ExerciseDetailDialog"; // To get prop types for activeDialog
+import { useStore } from "../../../contexts/StoreContext"; // Adjusted import path
+import styles from "./ExerciseVideoPlayer.module.scss"; // New SCSS module
+import type { ExerciseDetailDialogProps } from "../ExerciseDetailDialog"; // Adjusted import path
+import clsx from "clsx"; // Import clsx
 
-// Props are no longer passed to this component directly.
 interface ExerciseVideoPlayerProps {
 	roundedBottomCorners?: boolean;
 }
 
-const ExerciseVideoPlayer: React.FC<ExerciseVideoPlayerProps> = observer(() => {
+const ExerciseVideoPlayer: React.FC<ExerciseVideoPlayerProps> = observer(({ roundedBottomCorners }) => {
 	const { dialogStore, workoutPageStore } = useStore();
 
 	const activeDialogProps = dialogStore.activeDialog?.props as ExerciseDetailDialogProps | undefined;
 	const blockExerciseId = activeDialogProps?.blockExerciseId;
 
 	if (!blockExerciseId) {
-		// Render placeholder or nothing if ID is not available (e.g. dialog closing)
-		return <div className={styles.videoPanel}><div className={styles.videoPlaceholder}>Loading video...</div></div>;
+		return (
+			<div className={clsx(styles.videoPanel, roundedBottomCorners && styles.roundedBottomCorners)}>
+				<div className={styles.videoPlaceholder}>Loading video...</div>
+			</div>
+		);
 	}
 
 	const details = workoutPageStore.getFullExerciseDetailsForDialog(blockExerciseId);
 
 	if (!details) {
-		return <div className={styles.videoPanel}><div className={styles.videoPlaceholder}>Video details not available.</div></div>;
+		return (
+			<div className={clsx(styles.videoPanel, roundedBottomCorners && styles.roundedBottomCorners)}>
+				<div className={styles.videoPlaceholder}>Video details not available.</div>
+			</div>
+		);
 	}
 
 	const { exerciseName, vimeoCode } = details;
 
 	return (
-		<div className={styles.videoPanel}>
+		<div className={clsx(styles.videoPanel, roundedBottomCorners && styles.roundedBottomCorners)}>
 			{vimeoCode ? (
 				<iframe
 					allow="autoplay; fullscreen; picture-in-picture"

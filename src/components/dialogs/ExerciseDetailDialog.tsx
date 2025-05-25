@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import { useStore } from "../../contexts/StoreContext";
 import styles from "./ExerciseDetailDialog.module.scss";
-import ExerciseVideoPlayer from "./ExerciseVideoPlayer";
+import ExerciseVideoPlayer from "./ExerciseVideoPlayer/ExerciseVideoPlayer";
 import ExerciseDetailHeader from "./ExerciseDetailHeader";
 import ExerciseInfoBadges from "./ExerciseInfoBadges";
 

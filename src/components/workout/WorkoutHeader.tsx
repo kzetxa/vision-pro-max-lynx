@@ -2,7 +2,8 @@ import React from "react";
 import { observer } from "mobx-react-lite";
 import type { SupabasePopulatedWorkout } from "../../lib/types"; // Adjust path as needed
 import { extractUrlFromStringArray } from "../../lib/utils"; // Adjust path as needed
-import Badge from "../Badge"; // Assuming Badge is in src/components/Badge.tsx
+import { useStore } from "../../contexts/StoreContext";
+import Badge from "../Badge/Badge"; // Assuming Badge is in src/components/Badge.tsx
 import styles from "../../pages/WorkoutPage.module.scss"; // Use existing styles for now
 
 interface WorkoutHeaderProps {

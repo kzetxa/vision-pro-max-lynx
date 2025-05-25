@@ -11,7 +11,7 @@ import WorkoutBlockList from "../components/workout/WorkoutBlockList";
 import WorkoutBlockDetail from "../components/workout/WorkoutBlockDetail";
 
 // Other necessary imports
-import FinishWorkoutDialog from "../components/FinishWorkoutDialog";
+import FinishWorkoutDialog from "../components/FinishWorkoutDialog/FinishWorkoutDialog";
 // Badge is used in WorkoutHeader, no need to import here directly if not used elsewhere
 // Icons are used in ViewToggleButton and ExerciseListItem, not directly here
 // Checkbox is used in ExerciseListItem, not directly here

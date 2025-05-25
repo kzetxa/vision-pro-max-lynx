@@ -1,10 +1,10 @@
 import React from "react";
 // import type { PopulatedBlock } from '../lib/types'; // Old Airtable Type
-import type { SupabasePopulatedBlock, SupabaseBlockExercise } from "../lib/types"; // New Supabase Types
-import ExerciseTile from "./ExerciseTile";
+import type { ExerciseProgress } from "../../lib/localStorage"; // Import ExerciseProgress type
+import type { SupabaseBlockExercise, SupabasePopulatedBlock } from "../../lib/types"; // New Supabase Types
+import Badge from "../Badge/Badge"; // Import Badge component
 import styles from "./BlockViewer.module.scss"; // Import styles
-import type { ExerciseProgress } from "../lib/localStorage"; // Import ExerciseProgress type
-import Badge from "./Badge"; // Import Badge component
+import ExerciseTile from "../ExerciseTile/ExerciseTile";
 
 interface BlockViewerProps {
   // block: PopulatedBlock; // Old Airtable Type

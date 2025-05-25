@@ -1,8 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 // import type { WorkoutWithBlock1Preview } from '../lib/types'; // Old Type
-import type { SupabaseWorkoutPreview } from "../lib/types"; // New Type
-import { extractUrlFromStringArray } from "../lib/utils"; // Import the new utility function
+import type { SupabaseWorkoutPreview } from "../../lib/types"; // New Type
+import { extractUrlFromStringArray } from "../../lib/utils"; // Import the new utility function
 import styles from "./WorkoutCard.module.scss"; // Import the SCSS module
 
 interface WorkoutCardProps {

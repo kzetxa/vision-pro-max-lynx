@@ -1,7 +1,7 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
 import { useStore } from "../../contexts/StoreContext";
-import Badge from "../Badge";
+import Badge from "../Badge/Badge";
 import styles from "./ExerciseDetailDialog.module.scss";
 import type { ExerciseDetailDialogProps as ActiveDialogProps } from "./ExerciseDetailDialog"; // To get prop types
 

@@ -50,33 +50,6 @@
   height: 20px;
 }
 
-.videoPanel {
-  width: 100%;
-  /* Maintain aspect ratio, e.g., 16:9. Adjust height or use padding-top trick if needed */
-  aspect-ratio: 16 / 9; 
-  background-color: #000000;
-  border-top-left-radius: 12px; // Match dialog content rounding
-  border-top-right-radius: 12px;
-  overflow: hidden; // Ensure iframe respects border radius
-}
-
-.videoFrame {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.videoPlaceholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  color: #aaaaaa;
-  background-color: #1c1c1c;
-}
-
 .detailsPanel {
   padding: 16px; // User requested 12px, but 16px might look better with other elements. Can adjust.
 }

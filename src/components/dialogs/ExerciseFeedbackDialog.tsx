@@ -4,7 +4,7 @@ import { useStore } from "../../contexts/StoreContext";
 import type { SupabaseExercise } from "../../lib/types";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import styles from "./ExerciseFeedbackDialog.module.scss";
-import ExerciseVideoPlayer from "./ExerciseVideoPlayer";
+import ExerciseVideoPlayer from "./ExerciseVideoPlayer/ExerciseVideoPlayer";
 
 export interface ExerciseFeedbackDialogProps {
   exercise: SupabaseExercise;

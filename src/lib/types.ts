@@ -118,9 +118,7 @@ export interface SupabaseExercise {
   explanation_2?: string | null;
   explanation_3?: string | null;
   explanation_4?: string | null;
-  thumbnail_small_url?: string | null;
-  thumbnail_large_url?: string | null;
-  thumbnail_full_url?: string | null;
+  thumbnail?: string | null;
   // Add other relevant fields from your Supabase exercise_library table
   created_at?: string; 
 }

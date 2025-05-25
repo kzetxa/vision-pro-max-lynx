@@ -75,10 +75,10 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 			style={{ display: "flex", alignItems: "center", padding: "0.75rem 0", cursor: "pointer" }}
 		>
 			<div style={imageContainerStyle}>
-				{exercise.thumbnail_large_url ? (
+				{exercise.thumbnail ? (
 					<img
 						alt={exercise.current_name}
-						src={exercise.thumbnail_large_url}
+						src={exercise.thumbnail}
 						style={actualImageStyle}
 					/>
 				) : (

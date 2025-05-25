@@ -49,10 +49,10 @@ const WorkoutPage: React.FC = observer(() => {
 	// If specific actions are needed when an exercise in BlockViewer is completed, 
 	// the store should handle that, possibly by BlockViewer calling a store action directly (if refactored for MobX)
 	// or via a more specific callback.
-	const handleExerciseCompleteInBlockViewer = (blockExerciseId: string) => {
-		console.log(`Exercise ${blockExerciseId} completed in BlockViewer (Detail View) for workout ${workoutId}, client ${clientId}`);
-		// This could call a store action if needed, e.g., workoutPageStore.logExerciseCompletion(blockExerciseId);
-	};
+	// const handleExerciseCompleteInBlockViewer = (blockExerciseId: string) => {
+	// console.log(`Exercise ${blockExerciseId} completed in BlockViewer (Detail View) for workout ${workoutId}, client ${clientId}`);
+	// This could call a store action if needed, e.g., workoutPageStore.logExerciseCompletion(blockExerciseId);
+	// };
 
 	return (
 		<div className={styles.workoutPageContainer}>

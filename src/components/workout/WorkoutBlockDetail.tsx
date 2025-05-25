@@ -2,7 +2,6 @@ import React from "react";
 import { observer } from "mobx-react-lite";
 import * as Accordion from "@radix-ui/react-accordion";
 import type { SupabasePopulatedBlock } from "../../lib/types"; // Adjust path
-import type { ExerciseProgress } from "../../lib/localStorage"; // Adjust path
 import AccordionBlockItem from "./AccordionBlockItem"; // Import the new AccordionBlockItem
 import styles from "../../pages/WorkoutPage.module.scss"; // Use existing styles
 import { useStore } from "../../contexts/StoreContext"; // Corrected path

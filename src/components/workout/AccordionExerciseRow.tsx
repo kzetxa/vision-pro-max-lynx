@@ -2,7 +2,7 @@ import React from "react";
 import { observer } from "mobx-react-lite";
 import * as Checkbox from "@radix-ui/react-checkbox";
 import { CheckIcon } from "@radix-ui/react-icons";
-import type { SupabaseBlockExercise, SupabaseExercise } from "../../lib/types";
+import type { SupabaseBlockExercise } from "../../lib/types";
 import { parseSetsAndReps } from "../../lib/utils";
 import styles from "../../pages/WorkoutPage.module.scss";
 import { useStore } from "../../contexts/StoreContext";
@@ -19,7 +19,7 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 	isComplete,
 	onToggleComplete, 
 }) => {
-	const { dialogStore, workoutPageStore } = useStore();
+	const { dialogStore } = useStore();
 	const exercise = blockExercise.exercise;
 
 	if (!exercise || !exercise.current_name) {

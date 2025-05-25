@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from "react";
 // import type { Exercise } from '../lib/types'; // Old Airtable Type
 import type { SupabaseBlockExercise, SupabaseExercise } from "../lib/types"; // New Supabase Type
 import * as RadixCheckbox from "@radix-ui/react-checkbox";
-import * as RadixTabs from "@radix-ui/react-tabs";
 import { CheckIcon } from "@radix-ui/react-icons";
 import styles from "./ExerciseTile.module.scss"; // Import styles
 import { parseSetsAndReps, getDisplayableArrayString } from "../lib/utils"; // Import the parser and new utility
@@ -83,7 +82,7 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({
 
 	// Use Supabase field names from the exercise object
 	const exerciseName = exercise.current_name || "Unnamed Exercise";
-	const muscleWorked = exercise.equipment_public_name || "N/A"; // TODO: Revisit if this is the correct field
+	// const muscleWorked = exercise.equipment_public_name || "N/A"; // TODO: Revisit if this is the correct field
 	const vimeoCode = exercise.vimeo_code;
 	// Use Supabase explanation fields
 	const explanation1 = exercise.explanation_1;

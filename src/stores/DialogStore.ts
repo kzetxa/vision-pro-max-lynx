@@ -45,12 +45,19 @@ export class DialogStore {
 		});
 	}
 
-	pushDialog = (component: React.FC<any>, props?: any): void => {
+	pushDialog = (component: React.FC<any>, props?: any, usePreviousProps?: boolean): void => {
+		let dialogProps = props;
+		if (usePreviousProps && this.dialogStack.length > 0) {
+			const previousDialog = this.dialogStack[this.dialogStack.length - 1];
+			if (previousDialog && previousDialog.props) {
+				dialogProps = { ...previousDialog.props, ...props };
+			}
+		}
+
 		const newDialog: DialogStackItem = {
-			id: `dialog-${Date.now()}-${Math.random().toString(36)
-				.substr(2, 9)}`,
+			id: `dialog-${Date.now()}`,
 			component,
-			props,
+			props: dialogProps,
 		};
 		this.dialogStack.push(newDialog);
 		console.log("Pushed dialog:", newDialog.id, "Component:", component.displayName || component.name);

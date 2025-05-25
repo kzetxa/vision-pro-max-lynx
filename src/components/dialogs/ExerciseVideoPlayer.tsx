@@ -5,7 +5,9 @@ import styles from "./ExerciseDetailDialog.module.scss";
 import type { ExerciseDetailDialogProps } from "./ExerciseDetailDialog"; // To get prop types for activeDialog
 
 // Props are no longer passed to this component directly.
-interface ExerciseVideoPlayerProps {}
+interface ExerciseVideoPlayerProps {
+	roundedBottomCorners?: boolean;
+}
 
 const ExerciseVideoPlayer: React.FC<ExerciseVideoPlayerProps> = observer(() => {
 	const { dialogStore, workoutPageStore } = useStore();

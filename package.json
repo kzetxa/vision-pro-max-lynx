@@ -20,6 +20,7 @@
     "@types/node": "^22.15.17",
     "@types/pg": "^8.15.1",
     "airtable": "^0.12.2",
+	"clsx": "^2.1.1",
     "dotenv": "^16.5.0",
     "mobx": "^6.13.7",
     "mobx-react-lite": "^4.1.0",

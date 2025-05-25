@@ -4,6 +4,7 @@ import { useStore } from "../../contexts/StoreContext";
 import type { SupabaseExercise } from "../../lib/types";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import styles from "./ExerciseFeedbackDialog.module.scss";
+import ExerciseVideoPlayer from "./ExerciseVideoPlayer";
 
 export interface ExerciseFeedbackDialogProps {
   exercise: SupabaseExercise;
@@ -23,6 +24,7 @@ const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer((
 					<Cross2Icon />
 				</button>
 				<h2 className={styles.title}>Feedback for: {exercise.current_name || "Exercise"}</h2>
+				<ExerciseVideoPlayer />
 				<div className={styles.section}>
 					<h3 className={styles.sectionTitle}>Upload Your Video</h3>
 					{/* Placeholder for video upload UI */}

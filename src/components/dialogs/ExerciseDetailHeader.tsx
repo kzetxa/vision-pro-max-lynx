@@ -50,7 +50,7 @@ const ExerciseDetailHeader: React.FC<ExerciseDetailHeaderProps> = observer(() =>
 
 	const handleFeedbackButtonClick = () => {
 		// Ensure exercise object is available before pushing dialog
-		dialogStore.pushDialog(ExerciseFeedbackDialog, { exercise });
+		dialogStore.pushDialog(ExerciseFeedbackDialog, { exercise }, true);
 	};
 
 	return (

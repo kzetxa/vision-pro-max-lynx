@@ -6,7 +6,7 @@
   # Command to start your frontend development server
   command = "yarn dev" # or "npm run dev"
   # Port for the frontend server
-  port = 3002
+  port = 3055
   # Port for the Netlify Functions server
   functionsPort = 8888
   # Tells netlify dev TO use Vite's proxy if configured

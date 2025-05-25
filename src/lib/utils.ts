@@ -1,3 +1,5 @@
+import { SupabaseExercise } from "./types";
+
 /**
  * Attempts to extract the first URL from a string that might be
  * a JSON array containing a single URL string (e.g., '["http://example.com"]' ).
@@ -32,6 +34,11 @@ export function extractUrlFromStringArray(urlString: string | null | undefined):
 	// sometimes the URL is stored correctly *without* brackets/quotes.
 	// Returning null is safer if you expect ONLY the array format or null.
 	return null; 
+}
+
+/** concat list of explanation fields */
+export function concatExplanationFields(exercise: SupabaseExercise): string {
+	return exercise.explanation_1 + " " + exercise.explanation_2 + " " + exercise.explanation_3 + " " + exercise.explanation_4;
 }
 
 /**

@@ -1,0 +1,43 @@
+.uploadContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px; // Adjust as needed
+  height: 120px; // Adjust as needed
+  background-color: #4a4a4a; // Dark grey, adjust to match image
+  border: 2px dashed #707070; // Dashed border
+  border-radius: 12px; // Rounded corners
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.uploadContainer:hover {
+  background-color: #5a5a5a;
+  border-color: #808080;
+}
+
+.fileInput {
+  display: none; // Hide the actual file input
+}
+
+.uploadLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  cursor: pointer; // Ensure label also has cursor pointer
+}
+
+.plusIcon {
+  width: 40px; // Adjust size as needed
+  height: 40px;
+  color: #b0b0b0; // Light grey for the plus icon
+  transition: color 0.2s ease;
+}
+
+.uploadContainer:hover .plusIcon {
+  color: #ffffff;
+} 

@@ -5,6 +5,8 @@ import type { SupabaseExercise } from "../../lib/types";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import styles from "./ExerciseFeedbackDialog.module.scss";
 import ExerciseVideoPlayer from "./ExerciseVideoPlayer/ExerciseVideoPlayer";
+import { concatExplanationFields } from "../../lib/utils";
+import FileUpload from "../FileUpload/FileUpload";
 
 export interface ExerciseFeedbackDialogProps {
   exercise: SupabaseExercise;
@@ -24,16 +26,15 @@ const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer((
 					<Cross2Icon />
 				</button>
 				<h2 className={styles.title}>Feedback for: {exercise.current_name || "Exercise"}</h2>
-				<ExerciseVideoPlayer />
+				<ExerciseVideoPlayer roundedBottomCorners />
 				<div className={styles.section}>
-					<h3 className={styles.sectionTitle}>Upload Your Video</h3>
-					{/* Placeholder for video upload UI */}
-					<input
-						accept="video/*"
-						className={styles.fileInput}
-						type="file"
-					/>
-					<p className={styles.uploadHint}>Share a video of your performance for feedback.</p>
+					<h3 className={styles.sectionTitle}>Exercise Description</h3>
+					<p className={styles.descriptionText}>
+						{concatExplanationFields(exercise)}
+					</p>
+				</div>
+				<div className={styles.section}>
+					<FileUpload onFileSelect={() => {debugger;}} />
 				</div>
 				<div className={styles.section}>
 					<h3 className={styles.sectionTitle}>Coach&apos;s Feedback</h3>
@@ -52,7 +53,7 @@ const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer((
 						dialogStore.popDialog(); // Close dialog after submission for now
 					}}
 				>
-          Submit Video & View Feedback
+					Submit Video & View Feedback
 				</button>
 			</div>
 		</div>

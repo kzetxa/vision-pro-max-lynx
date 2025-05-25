@@ -20,7 +20,7 @@
     "@types/node": "^22.15.17",
     "@types/pg": "^8.15.1",
     "airtable": "^0.12.2",
-	"clsx": "^2.1.1",
+    "clsx": "^2.1.1",
     "dotenv": "^16.5.0",
     "mobx": "^6.13.7",
     "mobx-react-lite": "^4.1.0",
@@ -31,6 +31,7 @@
     "ts-node": "^10.9.2"
   },
   "devDependencies": {
+    "@netlify/functions": "^3.1.9",
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
     "@typescript-eslint/eslint-plugin": "^6.21.0",

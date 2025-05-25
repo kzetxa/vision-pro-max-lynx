@@ -1,0 +1,32 @@
+@use "../../styles/theme.module.scss" as theme;
+
+.listViewContainer {
+	/* Add any container-specific styles if needed */
+	/* For example, padding: 1rem; */
+}
+
+.listViewBlock {
+	backdrop-filter: blur(12px) saturate(180%);
+	-webkit-backdrop-filter: blur(12px) saturate(180%);
+	background-color: rgba(17, 25, 40, 0.45);
+	padding: 1rem;
+	margin-bottom: 2rem; /* Space between logical blocks of exercises */
+}
+
+.listViewBlockTitle {
+	font-size: 1.4rem; /* Prominent block titles */
+	font-weight: 600;   /* Bold but not overly heavy */
+	color: #ececec;     /* Light color for readability on dark backgrounds */
+	margin-bottom: 1rem; /* Space below the title before listing exercises */
+	padding-bottom: 0.5rem; /* Small padding for visual separation */
+	border-bottom: 1px solid #4a4a4a; /* Subtle separator line */
+	letter-spacing: 0.5px;
+}
+
+.statusMessage {
+	color: #b0b0b0; /* Muted color for status messages */
+	padding: 1.5rem 0.5rem; /* Ample padding */
+	font-style: italic;
+	text-align: center;
+	font-size: 1rem;
+} 

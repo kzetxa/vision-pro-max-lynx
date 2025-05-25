@@ -24,10 +24,16 @@ const WorkoutBlockDetail: React.FC<WorkoutBlockDetailProps> = observer(({
 		return <p className={styles.statusMessage}>No blocks found for this workout.</p>;
 	}
 
+	const defaultExpandedBlockIds = blocks.map((block) => block.id);
+
 	return (
 		// Default type "single" allows one item open at a time. "multiple" allows several.
 		// collapsible allows all items to be closed.
-		<Accordion.Root className={styles.accordionRootContainer} type="multiple">
+		<Accordion.Root 
+			className={styles.accordionRootContainer} 
+			defaultValue={defaultExpandedBlockIds}
+			type="multiple"
+		>
 			{blocks.map((block) => {
 				const blockProgressPercent = workoutPageStore.calculateBlockProgress(block);
 				return (

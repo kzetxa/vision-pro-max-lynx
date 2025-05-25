@@ -12,11 +12,18 @@ console.log("Script starting...");
 // ---- Argument Parsing for --local flag ----
 const args = process.argv.slice(2); // Skip node executable and script path
 const useLocalSupabase = args.includes('--local');
+const generateVoiceFiles = args.includes('--voice'); // Added for --voice flag
+
+let exerciseDetailText: string[] = []; // Initialize for voice generation
 
 if (useLocalSupabase) {
 	console.log("Using LOCAL Supabase instance.");
 } else {
 	console.log("Using REMOTE Supabase instance (default).");
+}
+
+if (generateVoiceFiles) {
+	console.log("Voice generation enabled. Exercise details will be collected.");
 }
 
 // ---- Configuration ----
@@ -108,9 +115,7 @@ interface SupabaseExercise {
 	explanation_2?: string;
 	explanation_3?: string;
 	explanation_4?: string;
-	thumbnail_small_url?: string;
-	thumbnail_large_url?: string; // Corresponds to Airtable's "large" thumbnail
-	thumbnail_full_url?: string;
+	thumbnail?: string; // New combined thumbnail field
 }
 
 interface AirtableBlocksOverviewFields {
@@ -300,7 +305,7 @@ async function syncExerciseLibrary() {
 				"Public Name (from Equipment)", 
 				"Over Sort Category", 
 				"Explination 1", "Explination 2", "Explanation 3", "Explanation 4", 
-				"Status (from look)"
+				// "Status (from look)" // No longer needed for thumbnails directly from here
 			]
 		}).eachPage((pageRecords, fetchNextPage) => {
 			pageRecords.forEach(record => airtableRecords.push(record as any));
@@ -311,16 +316,16 @@ async function syncExerciseLibrary() {
 		if (airtableRecords.length === 0) return;
 
 		const supabaseExercises: SupabaseExercise[] = airtableRecords.map(record => {
-			const attachments = record.fields["Status (from look)"];
-			let thumbSmallUrl, thumbLargeUrl, thumbFullUrl;
-			if (attachments && attachments.length > 0) {
-				const firstAttachment = attachments[0];
-				if (firstAttachment.thumbnails) {
-					thumbSmallUrl = firstAttachment.thumbnails.small?.url;
-					thumbLargeUrl = firstAttachment.thumbnails.large?.url;
-					thumbFullUrl  = firstAttachment.thumbnails.full?.url;
-				}
-			}
+			// const attachments = record.fields["Status (from look)"];
+			// let thumbSmallUrl, thumbLargeUrl, thumbFullUrl;
+			// if (attachments && attachments.length > 0) {
+			// 	const firstAttachment = attachments[0];
+			// 	if (firstAttachment.thumbnails) {
+			// 		thumbSmallUrl = firstAttachment.thumbnails.small?.url;
+			// 		thumbLargeUrl = firstAttachment.thumbnails.large?.url;
+			// 		thumbFullUrl  = firstAttachment.thumbnails.full?.url;
+			// 	}
+			// }
 
 			let vimeoCodeValue;
 			const vimeoVideoField = record.fields["vimeo video"];
@@ -334,6 +339,22 @@ async function syncExerciseLibrary() {
 			}
 
 			const publicNameFromEquipment = record.fields["Public Name (from Equipment)"];
+			const newThumbnailUrl = vimeoCodeValue ? `https://vumbnail.com/${vimeoCodeValue}_medium.jpg` : undefined;
+
+			if (generateVoiceFiles) {
+				const expl1 = record.fields["Explination 1"];
+				const expl2 = record.fields["Explination 2"];
+				const expl3 = record.fields["Explanation 3"];
+				const expl4 = record.fields["Explanation 4"];
+
+				const combinedExplanations = [expl1, expl2, expl3, expl4]
+					.filter(e => typeof e === 'string' && e.trim() !== '')
+					.join(' \n\n'); // Join with double newline for distinct paragraphs
+
+				if (combinedExplanations) {
+					exerciseDetailText.push(combinedExplanations);
+				}
+			}
 
 			return {
 				airtable_record_id: record.id,
@@ -345,16 +366,17 @@ async function syncExerciseLibrary() {
 				explanation_2: record.fields["Explination 2"],
 				explanation_3: record.fields["Explanation 3"],
 				explanation_4: record.fields["Explanation 4"],
-				thumbnail_small_url: thumbSmallUrl,
-				thumbnail_large_url: thumbLargeUrl,
-				thumbnail_full_url: thumbFullUrl,
+				thumbnail: newThumbnailUrl,
+				// thumbnail_small_url: thumbSmallUrl,
+				// thumbnail_large_url: thumbLargeUrl,
+				// thumbnail_full_url: thumbFullUrl,
 			};
 		});
 
 		const columns = [
 			'airtable_record_id', 'current_name', 'vimeo_code', 'equipment_public_name',
 			'over_sort_category', 'explanation_1', 'explanation_2', 'explanation_3', 'explanation_4',
-			'thumbnail_small_url', 'thumbnail_large_url', 'thumbnail_full_url'
+			'thumbnail' // Updated column
 		];
 		await upsertRecords('exercise_library', supabaseExercises, 'airtable_record_id', columns);
 
@@ -528,6 +550,8 @@ async function syncWorkouts(blockOverviewIdMap: Map<string, string>) {
 
 async function main() {
 	try {
+		debugger;
+
 		console.log("Starting sync for exercise_library...");
 		await syncExerciseLibrary();
 		console.log("Finished sync for exercise_library.");
@@ -550,6 +574,26 @@ async function main() {
 		console.log("Finished sync for workouts.");
 
 		console.log("Sync process completed successfully.");
+
+		if (generateVoiceFiles) {
+			if (exerciseDetailText.length > 0) {
+				console.log(`\nCollected ${exerciseDetailText.length} exercise detail texts for voice generation:`);
+				// Log the first few entries as samples
+				exerciseDetailText.slice(0, 3).forEach((text, index) => {
+					console.log(`  Sample ${index + 1}: "${text.substring(0, 150)}..."`);
+				});
+				if (exerciseDetailText.length > 3) {
+					console.log(`  ... and ${exerciseDetailText.length - 3} more.`);
+				}
+				// Later, this is where you would call the ElevenLabs function for each text.
+				// For example:
+				// for (const text of exerciseDetailText) {
+				//   await generateAudioWithElevenLabs(text, `exercise_${/* some_identifier_here */}.mp3`);
+				// }
+			} else {
+				console.log("\nNo exercise detail texts were collected for voice generation.");
+			}
+		}
 	} catch (error: any) {
 		console.error("Main sync process failed overall:");
 		if (error && error.message) {

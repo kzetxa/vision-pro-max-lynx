@@ -1,14 +1,13 @@
 // This file will handle fetching data from your backend (Netlify Functions proxying Airtable)
 
-import { createClient } from "@supabase/supabase-js";
-import type {
-	SupabasePopulatedWorkout,
-	SupabaseWorkoutPreview,
-	SupabasePopulatedBlock,
-	SupabaseBlockExercise,
-	SupabaseExercise
-} from "./types";
 import { supabase } from "./supabase"; // Ensure supabase client is initialized
+import type {
+	SupabaseBlockExercise,
+	SupabaseExercise,
+	SupabasePopulatedBlock,
+	SupabasePopulatedWorkout,
+	SupabaseWorkoutPreview
+} from "./types";
 
 // Remove the old API_BASE_URL constant as it's no longer needed
 // const API_BASE_URL = '/api';

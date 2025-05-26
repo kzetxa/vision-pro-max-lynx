@@ -1,0 +1,17 @@
+.videoTimestampContainer {
+  position: relative; /* Needed for absolute positioning of the timestamp */
+  display: inline-block; /* Or block, depending on layout needs */
+}
+
+.timestampOverlay {
+  position: absolute;
+  bottom: 5px; /* Adjust as needed */
+  left: 5px;   /* Adjust as needed */
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+  color: white;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 0.75rem; /* Adjust as needed */
+  z-index: 10; /* Ensure it's above other content within the container */
+  pointer-events: none; /* So it doesn't interfere with clicks on children */
+} 

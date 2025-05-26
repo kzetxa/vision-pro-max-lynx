@@ -142,4 +142,80 @@
 
 .submitButton:hover {
   background-color: #e6c300; // Darker yellow on hover
+}
+
+.uploadedVideosGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.videoTile {
+  width: 200px;
+  height: 120px;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  background-color: #4a4a4a;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.videoTile:hover {
+  border-color: #ffd700;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+}
+
+.starIconTile {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  background: rgba(0,0,0,0.45);
+  border-radius: 50%;
+  padding: 2px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.starIconFilled {
+  color: #FFD700;
+  filter: drop-shadow(0 1px 2px #222);
+}
+
+.starIconStroke {
+  color: #AAA;
+  filter: drop-shadow(0 1px 2px #222);
+}
+
+.playIconTile {
+  color: #fff;
+  width: 38px;
+  height: 38px;
+  opacity: 0.92;
+  z-index: 1;
+}
+
+.videoTileLabel {
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 500;
+  text-shadow: 0 1px 4px #222;
+  z-index: 2;
+  pointer-events: none;
 } 

@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from "react";
+import { Cross2Icon, StarIcon } from "@radix-ui/react-icons";
 import { observer } from "mobx-react-lite";
+import React, { useEffect, useState } from "react";
 import { useStore } from "../../contexts/StoreContext";
+import { supabase, upsertUserVideoUpload } from "../../lib/supabase";
 import type { SupabaseExercise } from "../../lib/types";
-import { Cross2Icon, PlayIcon, StarIcon } from "@radix-ui/react-icons";
+import { concatExplanationFields, getClientIdFromUrl } from "../../lib/utils";
+import { VimeoUploadResponse } from "../../lib/vimeoUtils";
 import styles from "./ExerciseFeedbackDialog.module.scss";
 import ExerciseVideoPlayer from "./ExerciseVideoPlayer/ExerciseVideoPlayer";
-import { concatExplanationFields, getClientIdFromUrl } from "../../lib/utils";
-import FileUpload from "../FileUpload/FileUpload";
-import { supabase } from "../../lib/supabase";
-import { upsertUserVideoUpload } from "../../lib/supabase";
+import VideoDisplayTile from "./VideoDisplayTile";
 import VideoPlayerDialog, { VideoPlayerDialogProps } from "./VideoPlayerDialog";
-import { VimeoUploadResponse } from "../../lib/vimeoUtils";
+import VideoUploadTile from "./VideoUploadTile";
+import { SmartIcon } from "../SmartIcon";
 
 export interface ExerciseFeedbackDialogProps {
   exercise: SupabaseExercise;
@@ -125,37 +126,34 @@ const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer((
 						</p>
 					</div>
 					{feedbackError && <p className={styles.errorMessage}>{feedbackError}</p>}
-					<FileUpload onUploadComplete={handleUploadCompleted} />
 					<div className={styles.uploadedVideosSection}>
 						{isLoadingVideos && <p>Loading your videos...</p>}
-						{uploadedVideos.length > 0 && (
-							<>
-								<h4 className={styles.subSectionTitle}>Your Uploaded Videos:</h4>
-								<ul className={styles.videoList}>
-									{uploadedVideos.map((url, index) => (
-										<li
-											className={styles.videoListItem}
-											key={index}
-											onClick={() => openVideoPlayerDialog(url)}
-										>
-											<StarIcon
-												className={styles.starIcon}
-												onClick={(e) => {
-													e.stopPropagation();
-													handleStarClick(index);
-												}}
-												style={{
-													color: starredVideoIndex === index ? "#FFD700" : "#AAA",
-													marginRight: 8,
-													cursor: "pointer",
-												}}
-											/>
-											<PlayIcon className={styles.playIcon} /> Video {index + 1}
-										</li>
-									))}
-								</ul>
-							</>
-						)}
+						<div className={styles.uploadedVideosGrid}>
+							{/* Upload tile (always first) */}
+							<VideoUploadTile onUploadComplete={handleUploadCompleted} />
+							{/* Video tiles */}
+							{uploadedVideos.map((url, index) => {
+								const vimeoIdMatch = url.match(/vimeo\.com\/(\d+)/);
+								const vimeoId = vimeoIdMatch ? vimeoIdMatch[1] : null;
+								// Assuming video creation/upload timestamp is not available yet in this scope.
+								// Passing a placeholder or `undefined` for videoTimestamp.
+								// You'll need to fetch/pass the actual timestamp when available.
+								const placeholderTimestamp = new Date(); // Replace with actual timestamp
+
+								return (
+									<VideoDisplayTile
+										index={index}
+										isStarred={starredVideoIndex === index}
+										key={index}
+										onStarClick={handleStarClick}
+										onTileClick={openVideoPlayerDialog}
+										videoId={vimeoId || undefined} // Ensure videoId is passed
+										videoTimestamp={placeholderTimestamp} // Pass timestamp
+										videoUrl={url}
+									/>
+								);
+							})}
+						</div>
 					</div>
 				</div>
 				<div className={styles.section}>

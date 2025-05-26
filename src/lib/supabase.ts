@@ -64,14 +64,20 @@ export const upsertWorkoutProgress = async (progress: {
 	return data;
 };
 
-// Function to add or update a user's video upload list
-export const upsertUserVideoUpload = async (clientId: string, newVideoUrl: string): Promise<any> => {
-	// First, try to fetch the existing record for the client
+// Function to add or update a user's video upload list for a specific exercise
+export const upsertUserVideoUpload = async (
+	clientId: string,
+	exerciseId: string,
+	newVideoUrl: string,
+	starredVideoIndex?: number,
+): Promise<any> => {
+	// First, try to fetch the existing record for the client and exercise
 	const { data: existingRecord, error: fetchError } = await supabase
 		.from("user_video_uploads")
-		.select("id, vimeo_video_urls")
+		.select("id, vimeo_video_urls, starred_video_index")
 		.eq("client_id", clientId)
-		.maybeSingle(); // Use maybeSingle to handle cases where client has no record yet
+		.eq("exercise_id", exerciseId)
+		.maybeSingle();
 
 	if (fetchError) {
 		console.error("Error fetching user video uploads:", fetchError);
@@ -79,34 +85,43 @@ export const upsertUserVideoUpload = async (clientId: string, newVideoUrl: strin
 	}
 
 	if (existingRecord) {
-		// Client has existing record, append new URL if not already present
+		// Client has existing record for this exercise, append new URL if not already present
 		const currentUrls = existingRecord.vimeo_video_urls || [];
+		let updatedUrls = currentUrls;
 		if (!currentUrls.includes(newVideoUrl)) {
-			const updatedUrls = [...currentUrls, newVideoUrl];
-			const { data, error } = await supabase
-				.from("user_video_uploads")
-				.update({ vimeo_video_urls: updatedUrls, updated_at: new Date().toISOString() })
-				.eq("id", existingRecord.id)
-				.select();
-			
-			if (error) {
-				console.error("Error updating user video uploads:", error);
-				throw error;
-			}
-			return data;
-		} else {
-			// URL already exists, no update needed, return existing record or a success message
-			console.log("Video URL already exists for this client.");
-			return existingRecord; 
+			updatedUrls = [...currentUrls, newVideoUrl];
 		}
-	} else {
-		// No existing record for this client, create a new one
+		const updateData: any = {
+			vimeo_video_urls: updatedUrls,
+			updated_at: new Date().toISOString(),
+		};
+		if (typeof starredVideoIndex === "number") {
+			updateData.starred_video_index = starredVideoIndex;
+		}
 		const { data, error } = await supabase
 			.from("user_video_uploads")
-			.insert({
-				client_id: clientId,
-				vimeo_video_urls: [newVideoUrl],
-			})
+			.update(updateData)
+			.eq("id", existingRecord.id)
+			.select();
+
+		if (error) {
+			console.error("Error updating user video uploads:", error);
+			throw error;
+		}
+		return data;
+	} else {
+		// No existing record for this client and exercise, create a new one
+		const insertData: any = {
+			client_id: clientId,
+			exercise_id: exerciseId,
+			vimeo_video_urls: [newVideoUrl],
+		};
+		if (typeof starredVideoIndex === "number") {
+			insertData.starred_video_index = starredVideoIndex;
+		}
+		const { data, error } = await supabase
+			.from("user_video_uploads")
+			.insert(insertData)
 			.select();
 
 		if (error) {

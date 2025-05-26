@@ -1,13 +1,5 @@
 import * as tus from "tus-js-client";
 
-interface VimeoUploadParams {
-	file: File;
-	accessToken: string;
-	videoName?: string;
-	videoDescription?: string;
-	onProgress?: (progress: number) => void;
-}
-
 export interface VimeoUploadResponse {
 	success: boolean;
 	videoId?: string;
@@ -32,7 +24,7 @@ const getVideoUploadTicket = async (
 	{ uploadLink: string; videoUri: string; finalVideoName: string } | { error: string }
 > => {
 	try {
-		const response = await fetch("/.netlify/functions/vimeoCreateUpload", {
+		const response = await fetch("http://localhost:8888/.netlify/functions/vimeoCreateUpload", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -84,7 +76,8 @@ const tusUploadAndVerify = (
 		console.log(`Starting TUS upload for ${file.name}`);
 
 		const upload = new tus.Upload(file, {
-			endpoint: uploadLink,
+			endpoint: getVimeoTusEndpoint(uploadLink),
+			uploadUrl: uploadLink,
 			retryDelays: [0, 3000, 5000, 10000, 20000],
 			metadata: {
 				filename: videoName,
@@ -127,3 +120,19 @@ export const uploadVideoToVimeo = async (params: InitiateVimeoUploadParams): Pro
 	const videoId = videoUri.split("/").pop();
 	return { success: true, videoId };
 };
+
+/**
+ * Extracts the base TUS endpoint from a Vimeo upload link.
+ * For example:
+ *   "https://global.upload.vimeo.com/tus/uploads/0ItGAQeARIfZOLZ4VW9HpM?token=..."
+ * becomes:
+ *   "https://global.upload.vimeo.com/tus/"
+ */
+export function getVimeoTusEndpoint(uploadLink: string): string {
+	// Match up to and including '/tus/'
+	const idx = uploadLink.indexOf("/tus/");
+	if (idx !== -1) {
+		return uploadLink.substring(0, idx + 5); // include '/tus/'
+	}
+	throw new Error("Invalid Vimeo upload link format");
+}

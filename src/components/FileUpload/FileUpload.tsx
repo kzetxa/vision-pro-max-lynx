@@ -12,22 +12,19 @@ interface FileUploadProps {
 const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete }) => {
 	const [isUploading, setIsUploading] = useState(false);
 	const [uploadProgress, setUploadProgress] = useState(0);
-	const [uploadStatus, setUploadStatus] = useState(""); // For messages like "Uploading...", "Success!", "Error!"
+	const [uploadStatus, setUploadStatus] = useState("");
 
 	const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
-		if (!file) {
-			return;
-		}
+		if (!file) return;
 
 		setIsUploading(true);
 		setUploadProgress(0);
 		setUploadStatus(`Starting upload for ${file.name}...`);
 
 		const result = await uploadVideoToVimeo({
-			file: file,
-			videoName: file.name, // You could allow user to set this via another input
-			// videoDescription: "My awesome video", // Optional description
+			file,
+			videoName: file.name,
 			onProgress: (progress) => {
 				setUploadProgress(progress);
 				setUploadStatus(`Uploading: ${progress}%`);
@@ -36,36 +33,34 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete }) => {
 
 		setIsUploading(false);
 		if (result.success) {
-			setUploadStatus(`Upload successful! Video ID: ${result.videoId}`);
-			onUploadComplete?.({ videoId: result.videoId });
+			setUploadStatus("Upload successful!");
+			onUploadComplete?.(result);
 		} else {
 			setUploadStatus(`Upload failed: ${result.error}`);
-			onUploadComplete?.({ error: result.error });
+			onUploadComplete?.({ success: false, error: result.error });
 		}
-		// Reset file input to allow uploading the same file again if needed
-		event.target.value = ""; 
+		event.target.value = ""; // Reset file input
 	};
 
 	return (
 		<div className={styles.uploadContainer}>
-			<input 
-				accept="video/*" 
+			<input
+				accept="video/*"
 				className={styles.fileInput}
-				disabled={isUploading} // Disable input while uploading
+				disabled={isUploading}
 				id="file-upload-input"
 				onChange={handleFileChange}
 				type="file"
 			/>
-			<label 
-				className={`${styles.uploadLabel} ${isUploading ? styles.disabledLabel : ""}`} 
+			<label
+				className={`${styles.uploadLabel} ${isUploading ? styles.disabledLabel : ""}`}
 				htmlFor="file-upload-input"
 			>
 				{isUploading ? (
 					<div className={styles.progressDisplay}>
 						<div>{uploadStatus}</div>
-						{/* Basic progress bar - can be made more sophisticated */} 
 						<div style={{ width: "100%", backgroundColor: "#555", borderRadius: "4px", marginTop: "5px" }}>
-							<div 
+							<div
 								style={{
 									width: `${uploadProgress}%`,
 									height: "10px",

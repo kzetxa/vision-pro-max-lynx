@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { useStore } from "../../contexts/StoreContext";
 import type { SupabaseExercise } from "../../lib/types";
-import { Cross2Icon, PlayIcon } from "@radix-ui/react-icons";
+import { Cross2Icon, PlayIcon, StarIcon } from "@radix-ui/react-icons";
 import styles from "./ExerciseFeedbackDialog.module.scss";
 import ExerciseVideoPlayer from "./ExerciseVideoPlayer/ExerciseVideoPlayer";
 import { concatExplanationFields, getClientIdFromUrl } from "../../lib/utils";
@@ -21,6 +21,7 @@ const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer((
 	const [uploadedVideos, setUploadedVideos] = useState<string[]>([]);
 	const [isLoadingVideos, setIsLoadingVideos] = useState(false);
 	const [feedbackError, setFeedbackError] = useState<string | null>(null);
+	const [starredVideoIndex, setStarredVideoIndex] = useState<number | null>(null);
 
 	useEffect(() => {
 		const fetchVideos = async () => {
@@ -30,25 +31,31 @@ const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer((
 			try {
 				const { data, error } = await supabase
 					.from("user_video_uploads")
-					.select("vimeo_video_urls")
+					.select("vimeo_video_urls, starred_video_index")
 					.eq("client_id", clientId)
+					.eq("exercise_id", exercise.id)
 					.maybeSingle();
 
 				if (error) throw error;
 				if (data && data.vimeo_video_urls) {
 					setUploadedVideos(data.vimeo_video_urls);
+					setStarredVideoIndex(
+						typeof data.starred_video_index === "number" ? data.starred_video_index : null,
+					);
 				} else {
 					setUploadedVideos([]);
+					setStarredVideoIndex(null);
 				}
 			} catch (error: any) {
 				console.error("Error fetching uploaded videos:", error);
 				setFeedbackError("Could not load previously uploaded videos.");
 				setUploadedVideos([]);
+				setStarredVideoIndex(null);
 			}
 			setIsLoadingVideos(false);
 		};
 		fetchVideos();
-	}, []);
+	}, [exercise.id]);
 
 	const handleUploadCompleted = async (result: VimeoUploadResponse) => {
 		console.log("FileUpload complete:", result);
@@ -57,7 +64,9 @@ const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer((
 		if (result.success && result.videoId) {
 			const vimeoUrl = `https://vimeo.com/${result.videoId}`;
 			try {
-				await upsertUserVideoUpload(clientId, vimeoUrl);
+				// If this is the first video, star it by default (index 0)
+				const starredVideoIndex = uploadedVideos.length === 0 ? 0 : undefined;
+				await upsertUserVideoUpload(clientId, exercise.id, vimeoUrl, starredVideoIndex);
 				setUploadedVideos((prevVideos) => [...prevVideos, vimeoUrl]);
 				console.log("Successfully saved video URL to Supabase.");
 			} catch (error: any) {
@@ -66,6 +75,17 @@ const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer((
 			}
 		} else if (result.error) {
 			setFeedbackError(`Upload failed: ${result.error}`);
+		}
+	};
+
+	const handleStarClick = async (index: number) => {
+		const clientId = getClientIdFromUrl();
+		try {
+			await upsertUserVideoUpload(clientId, exercise.id, uploadedVideos[index], index);
+			setStarredVideoIndex(index);
+		} catch (error: any) {
+			console.error("Error starring video:", error);
+			setFeedbackError(`Failed to star video: ${error.message}`);
 		}
 	};
 
@@ -118,6 +138,18 @@ const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer((
 											key={index}
 											onClick={() => openVideoPlayerDialog(url)}
 										>
+											<StarIcon
+												className={styles.starIcon}
+												onClick={(e) => {
+													e.stopPropagation();
+													handleStarClick(index);
+												}}
+												style={{
+													color: starredVideoIndex === index ? "#FFD700" : "#AAA",
+													marginRight: 8,
+													cursor: "pointer",
+												}}
+											/>
 											<PlayIcon className={styles.playIcon} /> Video {index + 1}
 										</li>
 									))}

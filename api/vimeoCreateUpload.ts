@@ -8,11 +8,24 @@ export async function handler(event, context) {
 	console.log('--- vimeoCreateUpload invoked ---');
 	console.log('Received event:', JSON.stringify(event, null, 2));
 
+	// CORS preflight handling
+	if (event.httpMethod === 'OPTIONS') {
+		return {
+			statusCode: 200,
+			headers: {
+				'Access-Control-Allow-Origin': '*',
+				'Access-Control-Allow-Methods': 'POST, OPTIONS',
+				'Access-Control-Allow-Headers': 'Content-Type',
+			},
+			body: '',
+		};
+	}
+
 	if (event.httpMethod !== 'POST') {
 		console.log('🛑 Invalid HTTP method:', event.httpMethod);
 		return {
 			statusCode: 405,
-			headers: { Allow: 'POST' },
+			headers: { 'Allow': 'POST', 'Access-Control-Allow-Origin': '*' },
 			body: 'Method Not Allowed'
 		};
 	}
@@ -33,7 +46,7 @@ export async function handler(event, context) {
 	if (!token) {
 		console.log('VITE_VIMEO_ACCESS_TOKEN:', process.env.VITE_VIMEO_ACCESS_TOKEN);
 		console.error('🛑 VITE_VIMEO_ACCESS_TOKEN environment variable is not set');
-		return { statusCode: 500, body: 'Server configuration error' };
+		return { statusCode: 500, headers: { 'Access-Control-Allow-Origin': '*' }, body: 'Server configuration error' };
 	}
 
 	try {
@@ -56,7 +69,7 @@ export async function handler(event, context) {
 
 		if (!createRes.ok) {
 			console.error('🛑 Vimeo API error:', resText);
-			return { statusCode: createRes.status, body: resText };
+			return { statusCode: createRes.status, headers: { 'Access-Control-Allow-Origin': '*' }, body: resText };
 		}
 
 		const createData = JSON.parse(resText);
@@ -72,11 +85,11 @@ export async function handler(event, context) {
 
 		return {
 			statusCode: 200,
-			headers: { 'Content-Type': 'application/json' },
+			headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
 			body: JSON.stringify(responsePayload)
 		};
 	} catch (err) {
 		console.error('💥 Internal server error:', err.stack || err.message);
-		return { statusCode: 500, body: 'Internal server error - test 872' };
+		return { statusCode: 500, headers: { 'Access-Control-Allow-Origin': '*' }, body: 'Internal server error - test 872' };
 	}
 }

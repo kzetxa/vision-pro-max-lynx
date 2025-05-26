@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useStore } from "../../contexts/StoreContext";
 import { supabase, upsertUserVideoUpload } from "../../lib/supabase";
 import type { SupabaseExercise } from "../../lib/types";
-import { concatExplanationFields, getClientIdFromUrl } from "../../lib/utils";
+import { concatExplanationFields, getClientIdFromUrl, extractVimeoId } from "../../lib/utils";
 import { VimeoUploadResponse } from "../../lib/vimeoUtils";
 import styles from "./ExerciseFeedbackDialog.module.scss";
 import ExerciseVideoPlayer from "./ExerciseVideoPlayer/ExerciseVideoPlayer";
@@ -17,18 +17,26 @@ export interface ExerciseFeedbackDialogProps {
   exercise: SupabaseExercise;
 }
 
+interface VideoFeedback {
+  vimeo_code: string;
+  feedback: string | null;
+}
+
 const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer(({ exercise }) => {
 	const { dialogStore } = useStore();
 	const [uploadedVideos, setUploadedVideos] = useState<string[]>([]);
+	const [videoFeedbacks, setVideoFeedbacks] = useState<Record<string, string | null>>({});
 	const [isLoadingVideos, setIsLoadingVideos] = useState(false);
 	const [feedbackError, setFeedbackError] = useState<string | null>(null);
 	const [starredVideoIndex, setStarredVideoIndex] = useState<number | null>(null);
 
 	useEffect(() => {
-		const fetchVideos = async () => {
+		const fetchVideosAndFeedback = async () => {
 			const clientId = getClientIdFromUrl();
 			setIsLoadingVideos(true);
 			setFeedbackError(null);
+			setVideoFeedbacks({});
+
 			try {
 				const { data, error } = await supabase
 					.from("user_video_uploads")
@@ -38,14 +46,46 @@ const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer((
 					.maybeSingle();
 
 				if (error) throw error;
+
+				let currentUploadedVideos: string[] = [];
 				if (data && data.vimeo_video_urls) {
-					setUploadedVideos(data.vimeo_video_urls);
+					currentUploadedVideos = data.vimeo_video_urls;
+					setUploadedVideos(currentUploadedVideos);
 					setStarredVideoIndex(
 						typeof data.starred_video_index === "number" ? data.starred_video_index : null,
 					);
 				} else {
 					setUploadedVideos([]);
 					setStarredVideoIndex(null);
+				}
+
+				if (currentUploadedVideos.length > 0) {
+					const vimeoCodes = currentUploadedVideos.map((url) => extractVimeoId(url)).filter((id) => id !== null) as string[];
+					if (vimeoCodes.length > 0) {
+						try {
+							const feedbackResponse = await fetch("/api/get-video-feedbacks", {
+								method: "POST",
+								headers: { "Content-Type": "application/json" },
+								body: JSON.stringify({ vimeo_codes: vimeoCodes }),
+							});
+
+							if (!feedbackResponse.ok) {
+								const errBody = await feedbackResponse.text();
+								console.error("Error fetching video feedback:", feedbackResponse.status, errBody);
+							} else {
+								const fetchedFeedbacks = await feedbackResponse.json() as VideoFeedback[];
+								const feedbackMap: Record<string, string | null> = {};
+								fetchedFeedbacks.forEach((fb) => {
+									if (fb.vimeo_code) {
+										feedbackMap[fb.vimeo_code] = fb.feedback;
+									}
+								});
+								setVideoFeedbacks(feedbackMap);
+							}
+						} catch (feedbackFetchError: any) {
+							console.error("Failed to fetch video feedback from Netlify function:", feedbackFetchError);
+						}
+					}
 				}
 			} catch (error: any) {
 				console.error("Error fetching uploaded videos:", error);
@@ -55,7 +95,7 @@ const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer((
 			}
 			setIsLoadingVideos(false);
 		};
-		fetchVideos();
+		fetchVideosAndFeedback();
 	}, [exercise.id]);
 
 	const handleUploadCompleted = async (result: VimeoUploadResponse) => {
@@ -64,12 +104,36 @@ const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer((
 		const clientId = getClientIdFromUrl();
 		if (result.success && result.videoId) {
 			const vimeoUrl = `https://vimeo.com/${result.videoId}`;
+			const vimeoCode = result.videoId;
 			try {
-				// If this is the first video, star it by default (index 0)
-				const starredVideoIndex = uploadedVideos.length === 0 ? 0 : undefined;
-				await upsertUserVideoUpload(clientId, exercise.id, vimeoUrl, starredVideoIndex);
+				const starredVideoIndexToSet = uploadedVideos.length === 0 ? 0 : undefined;
+				await upsertUserVideoUpload(clientId, exercise.id, vimeoUrl, starredVideoIndexToSet);
 				setUploadedVideos((prevVideos) => [...prevVideos, vimeoUrl]);
 				console.log("Successfully saved video URL to Supabase.");
+
+				try {
+					console.log(`Calling Netlify function to process video: ${vimeoCode} for exercise: ${exercise.id}`);
+					const response = await fetch("/api/airtable-video-processor", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify({
+							vimeo_code: vimeoCode,
+							supabase_exercise_id: exercise.id,
+						}),
+					});
+
+					if (!response.ok) {
+						const errorBody = await response.text();
+						console.error("Netlify function call failed:", response.status, errorBody);
+					} else {
+						const responseData = await response.json();
+						console.log("Netlify function call successful:", responseData);
+					}
+				} catch (netlifyError: any) {
+					console.error("Error calling Netlify function:", netlifyError);
+				}
 			} catch (error: any) {
 				console.error("Error saving video URL to Supabase:", error);
 				setFeedbackError(`Failed to save video: ${error.message}`);
@@ -129,26 +193,22 @@ const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer((
 					<div className={styles.uploadedVideosSection}>
 						{isLoadingVideos && <p>Loading your videos...</p>}
 						<div className={styles.uploadedVideosGrid}>
-							{/* Upload tile (always first) */}
 							<VideoUploadTile onUploadComplete={handleUploadCompleted} />
-							{/* Video tiles */}
 							{uploadedVideos.map((url, index) => {
-								const vimeoIdMatch = url.match(/vimeo\.com\/(\d+)/);
-								const vimeoId = vimeoIdMatch ? vimeoIdMatch[1] : null;
-								// Assuming video creation/upload timestamp is not available yet in this scope.
-								// Passing a placeholder or `undefined` for videoTimestamp.
-								// You'll need to fetch/pass the actual timestamp when available.
-								const placeholderTimestamp = new Date(); // Replace with actual timestamp
+								const vimeoId = extractVimeoId(url);
+								const placeholderTimestamp = new Date();
+								const feedbackText = vimeoId ? videoFeedbacks[vimeoId] : null;
 
 								return (
 									<VideoDisplayTile
+										feedback={feedbackText}
 										index={index}
 										isStarred={starredVideoIndex === index}
 										key={index}
 										onStarClick={handleStarClick}
 										onTileClick={openVideoPlayerDialog}
-										videoId={vimeoId || undefined} // Ensure videoId is passed
-										videoTimestamp={placeholderTimestamp} // Pass timestamp
+										videoId={vimeoId || undefined}
+										videoTimestamp={placeholderTimestamp}
 										videoUrl={url}
 									/>
 								);
@@ -164,15 +224,6 @@ const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer((
 						readOnly
 					/>
 				</div>
-				<button 
-					className={styles.submitButton} 
-					onClick={() => {
-						console.log("Submit feedback / video action for", exercise.id);
-						dialogStore.popDialog();
-					}}
-				>
-					Submit Video & View Feedback
-				</button>
 			</div>
 		</div>
 	);

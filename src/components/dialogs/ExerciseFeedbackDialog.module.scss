@@ -123,27 +123,6 @@
   box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.3);
 }
 
-.submitButton {
-  display: block;
-  width: 100%;
-  padding: 12px 20px;
-  background-color: #ffd700; // Yellow theme color
-  color: #2d2d2d; // Dark text for contrast
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: center;
-  transition: background-color 0.2s ease;
-  margin-top: 10px;
-  box-sizing: border-box;
-}
-
-.submitButton:hover {
-  background-color: #e6c300; // Darker yellow on hover
-}
-
 .uploadedVideosGrid {
   display: flex;
   flex-wrap: wrap;

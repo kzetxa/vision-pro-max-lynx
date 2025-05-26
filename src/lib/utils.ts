@@ -137,4 +137,20 @@ export function ensureClientIdInUrl(): void {
 		url.searchParams.set("clientId", HARDCODED_CLIENT_ID);
 		window.location.replace(url.toString());
 	}
+}
+
+/**
+ * Extracts the Vimeo video ID from various Vimeo URL formats.
+ * @param url The Vimeo URL string.
+ * @returns The Vimeo video ID string or null if not found.
+ */
+export function extractVimeoId(url: string | null | undefined): string | null {
+	if (!url) return null;
+	// Matches vimeo.com/123456789
+	// Matches vimeo.com/channels/mychannel/123456789
+	// Matches vimeo.com/groups/mygroup/videos/123456789
+	// Matches player.vimeo.com/video/123456789
+	const vimeoRegex = /(?:vimeo(?:pro)?.com\/(?:[\w\d]+\/)*(?:videos\/|video\/|channels\/.+\/|groups\/.+\/videos\/)?|player\.vimeo\.com\/video\/)(\d+)/i;
+	const match = url.match(vimeoRegex);
+	return match ? match[1] : null;
 } 

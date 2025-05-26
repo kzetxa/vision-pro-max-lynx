@@ -15,6 +15,7 @@ interface VideoDisplayTileProps {
 	onTileClick: (videoUrl: string) => void;
 	videoId?: string;
 	videoTimestamp?: Date | string | number;
+	feedback?: string | null;
 }
 
 const VideoDisplayTile: React.FC<VideoDisplayTileProps> = ({
@@ -25,6 +26,7 @@ const VideoDisplayTile: React.FC<VideoDisplayTileProps> = ({
 	onTileClick,
 	videoId,
 	videoTimestamp,
+	feedback,
 }) => {
 	const handleStarClickEvent = (e: React.MouseEvent | React.KeyboardEvent) => {
 		e.stopPropagation();
@@ -32,41 +34,47 @@ const VideoDisplayTile: React.FC<VideoDisplayTileProps> = ({
 	};
 
 	return (
-		<VideoTimestamp timestamp={videoTimestamp}>
-			<VideoThumbnail
-				aria-label={`Play video ${index + 1}`}
-				className={styles.videoTile}
-				onClick={() => onTileClick(videoUrl)}
-				onKeyDown={(e) => {
-					if (e.key === "Enter" || e.key === " ") {
-						onTileClick(videoUrl);
-					}
-				}}
-				role="button"
-				tabIndex={0}
-				videoId={videoId || ""}
-			>
-				<SmartIcon
-					aria-label={isStarred ? "Unstar video" : "Star video"}
-					as={StarIcon}
-					className={clsx(
-						styles.starIconTile,
-						isStarred ? styles.starIconFilled : styles.starIconStroke,
-					)}
-					filled={isStarred}
-					onClick={handleStarClickEvent}
+		<div className={styles.videoDisplayTileContainer}>
+			<VideoTimestamp timestamp={videoTimestamp}>
+				<VideoThumbnail
+					aria-label={`Play video ${index + 1}`}
+					className={styles.videoTile}
+					onClick={() => onTileClick(videoUrl)}
 					onKeyDown={(e) => {
 						if (e.key === "Enter" || e.key === " ") {
-							handleStarClickEvent(e);
+							onTileClick(videoUrl);
 						}
 					}}
 					role="button"
 					tabIndex={0}
-				/>
-				<PlayIcon aria-hidden="true" className={styles.playIconTile} />
-				<div className={styles.videoTileLabel}>Video {index + 1}</div>
-			</VideoThumbnail>
-		</VideoTimestamp>
+					videoId={videoId || ""}
+				>
+					<SmartIcon
+						aria-label={isStarred ? "Unstar video" : "Star video"}
+						as={StarIcon}
+						className={clsx(
+							styles.starIconTile,
+							isStarred ? styles.starIconFilled : styles.starIconStroke,
+						)}
+						filled={isStarred}
+						onClick={handleStarClickEvent}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === " ") {
+								handleStarClickEvent(e);
+							}
+						}}
+						role="button"
+						tabIndex={0}
+					/>
+					<PlayIcon aria-hidden="true" className={styles.playIconTile} />
+				</VideoThumbnail>
+			</VideoTimestamp>
+			{feedback && (
+				<div className={styles.feedbackTextDisplay}>
+					<p><strong>Feedback:</strong> {feedback}</p>
+				</div>
+			)}
+		</div>
 	);
 };
 

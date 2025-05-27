@@ -63,7 +63,7 @@ const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer((
 					const vimeoCodes = currentUploadedVideos.map((url) => extractVimeoId(url)).filter((id) => id !== null) as string[];
 					if (vimeoCodes.length > 0) {
 						try {
-							const feedbackResponse = await fetch("/api/get-video-feedbacks", {
+							const feedbackResponse = await fetch("/.netlify/functions/get-video-feedbacks", {
 								method: "POST",
 								headers: { "Content-Type": "application/json" },
 								body: JSON.stringify({ vimeo_codes: vimeoCodes }),
@@ -113,7 +113,7 @@ const ExerciseFeedbackDialog: React.FC<ExerciseFeedbackDialogProps> = observer((
 
 				try {
 					console.log(`Calling Netlify function to process video: ${vimeoCode} for exercise: ${exercise.id}`);
-					const response = await fetch("/api/airtable-video-processor", {
+					const response = await fetch("/.netlify/functions/airtable-video-processor", {
 						method: "POST",
 						headers: {
 							"Content-Type": "application/json",

@@ -34,7 +34,7 @@ async function main(): Promise<void> {
 
 	const functionUrl: string =
 		process.env.NETLIFY_FUNCTION_URL ??
-		'http://localhost:3000/api/vimeoCreateUpload';
+		'http://localhost:3000/.netlify/functions/vimeoCreateUpload';
 
 	console.log(`Requesting TUS upload link from ${functionUrl}...`);
 	const initRes: Response = await fetch(functionUrl, {

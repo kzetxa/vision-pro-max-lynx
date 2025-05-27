@@ -23,14 +23,17 @@ const VimeoThumbnail: React.FC<VimeoThumbnailProps> = ({ videoId, children, styl
 				const res = await fetch(
 					`https://vimeo.com/api/oembed.json?url=https://vimeo.com/${videoId}`,
 				);
+				const vumbnailUrl = `https://vumbnail.com/${videoId}_medium.jpg`;
 				if (!res.ok) {
-					throw new Error(`Failed to fetch thumbnail data (status: ${res.status})`);
+					console.warn("Failed to fetch thumbnail data (status: ${res.status}), using vumbnail.com");
+					setThumbnailUrl(vumbnailUrl);
 				}
 				const data = await res.json();
 				if (data && data.thumbnail_url) {
 					setThumbnailUrl(data.thumbnail_url);
 				} else {
-					throw new Error("Thumbnail URL not found in Vimeo response");
+					console.warn("Thumbnail URL not found in Vimeo response, using vumbnail.com");
+					setThumbnailUrl(vumbnailUrl);
 				}
 			} catch (fetchError: any) {
 				console.error("Error fetching Vimeo thumbnail:", fetchError);

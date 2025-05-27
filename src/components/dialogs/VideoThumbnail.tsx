@@ -31,7 +31,7 @@ const VimeoThumbnail: React.FC<VimeoThumbnailProps> = observer(({ videoId, child
 
 		// Cleanup function to dispose the store's reaction when the component unmounts
 		return () => {
-			store.dispose();
+			// store.dispose(); TODO: Add this back in when we correctly fix the re-render issues of parent components
 		};
 	}, [videoId, store]);
 

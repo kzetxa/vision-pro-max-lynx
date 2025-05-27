@@ -24,7 +24,7 @@ const getVideoUploadTicket = async (
 	{ uploadLink: string; videoUri: string; finalVideoName: string } | { error: string }
 > => {
 	try {
-		const response = await fetch("http://localhost:8888/.netlify/functions/vimeoCreateUpload", {
+		const response = await fetch("/api/vimeoCreateUpload", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",

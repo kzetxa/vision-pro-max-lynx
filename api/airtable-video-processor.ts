@@ -4,12 +4,20 @@ import { Handler, HandlerEvent, HandlerContext } from '@netlify/functions';
 
 interface RequestBody {
   vimeo_code: string;
-  supabase_exercise_id: string | number; // Assuming exercise.id can be string or number
+  supabase_exercise_id: string | number;
 }
 
 interface SupabaseExerciseData {
   airtable_record_id: string;
 }
+
+const getEnv = (name: string): string => {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing environment variable: ${name}`);
+  }
+  return value;
+};
 
 export const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
   if (event.httpMethod !== 'POST') {
@@ -35,28 +43,13 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
     return { statusCode: 400, body: 'Missing vimeo_code or supabase_exercise_id' };
   }
 
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
-  if (!supabaseUrl) {
-    throw new Error('VITE_SUPABASE_URL is not set');
-  }
-  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
-  if (!supabaseKey) {
-    throw new Error('VITE_SUPABASE_ANON_KEY is not set');
-  }
+  const supabaseUrl = getEnv('VITE_SUPABASE_URL');
+  const supabaseKey = getEnv('VITE_SUPABASE_ANON_KEY');
   const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
-  const airtableApiKey = process.env.VITE_AIRTABLE_API_KEY;
-  if (!airtableApiKey) {
-    throw new Error('VITE_AIRTABLE_API_KEY is not set');
-  }
-  const airtableBaseId = process.env.VITE_AIRTABLE_BASE_ID;
-  if (!airtableBaseId) {
-    throw new Error('VITE_AIRTABLE_BASE_ID is not set');
-  }
-  const airtableVideoTableId = process.env.VITE_AIRTABLE_VIDEO_FEEDBACK_ID;
-  if (!airtableVideoTableId) {
-    throw new Error('VITE_AIRTABLE_VIDEO_FEEDBACK_ID is not set');
-  }
+  const airtableApiKey = getEnv('VITE_AIRTABLE_API_KEY');
+  const airtableBaseId = getEnv('VITE_AIRTABLE_BASE_ID');
+  const airtableVideoTableId = getEnv('VITE_AIRTABLE_VIDEO_FEEDBACK_ID');
 
   Airtable.configure({ apiKey: airtableApiKey });
   const base = Airtable.base(airtableBaseId);
@@ -115,6 +108,9 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
     }
   } catch (error: any) {
     console.error('Error processing Airtable request:', error);
+    if (error.message.startsWith('Missing environment variable:')) {
+        return { statusCode: 500, body: error.message };
+    }
     return { statusCode: 500, body: `Internal Server Error: ${error.message || String(error)}` };
   }
 }; 

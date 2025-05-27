@@ -20,7 +20,6 @@ interface FeedbackResponse {
 const getEnv = (name: string): string => {
 	const value = process.env[name];
 	if (!value) {
-		// This will cause the function to fail, which is intended if env vars are missing.
 		throw new Error(`Missing environment variable: ${name}`);
 	}
 	return value;
@@ -49,7 +48,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 	}
 
 	if (vimeo_codes.length === 0) {
-		return { statusCode: 200, body: JSON.stringify([]) }; // No codes, return empty array
+		return { statusCode: 200, body: JSON.stringify([]) };
 	}
 
 	try {
@@ -61,22 +60,18 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 		const base = Airtable.base(airtableBaseId);
 		const videoFeedbackTable = base(airtableVideoTableId);
 
-		// Construct the OR formula for Airtable
-		// Example: OR({vimeo_code} = "code1", {vimeo_code} = "code2")
 		const formula = `OR(${vimeo_codes.map(code => `{vimeo_code} = "${code}"`).join(', ')})`;
 
-		// .all() returns Promise<ReadonlyArray<Record<TFields>>>
-		// TFields here is AirtableFeedbackRecordFields
 		const records = (await videoFeedbackTable
 			.select({
 				filterByFormula: formula,
-				fields: ['vimeo_code', 'feedback'], // Specify only the fields you need
+				fields: ['vimeo_code', 'feedback'],
 			})
 			.all()) as unknown as ReadonlyArray<Record<AirtableFeedbackRecordFields>>;
 
 		const feedbackData: FeedbackResponse[] = records.map(record => ({
-			vimeo_code: record.fields.vimeo_code, // Accessing fields via record.fields
-			feedback: record.fields.feedback || null, // Accessing fields via record.fields and providing a fallback
+			vimeo_code: record.fields.vimeo_code,
+			feedback: record.fields.feedback || null,
 		}));
 
 		return {
@@ -86,8 +81,9 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 
 	} catch (error: any) {
 		console.error('Error fetching feedback from Airtable:', error);
-		// If the error is due to missing env vars, the getEnv will throw before this.
-		// This will catch Airtable API errors or other runtime issues.
-		return { statusCode: 500, body: `Internal Server Error: ${error.message || String(error)}` };
+		return { 
+			statusCode: 500, 
+			body: `Internal Server Error: ${error.message || String(error)}` 
+		};
 	}
 };

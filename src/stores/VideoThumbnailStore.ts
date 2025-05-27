@@ -1,4 +1,4 @@
-import { makeObservable, observable, action, runInAction, reaction } from "mobx";
+import { makeObservable, observable, action, runInAction, reaction, IReactionDisposer } from "mobx";
 
 export type ThumbnailStatus = "idle" | "loading" | "loaded" | "processing" | "error";
 
@@ -10,6 +10,7 @@ export class VideoThumbnailStore {
 
 	private fetchController: AbortController | null = null;
 	private pollingIntervalId: NodeJS.Timeout | null = null;
+	private disposeReaction: IReactionDisposer | null = null;
 
 	constructor() {
 		makeObservable(this, {
@@ -25,9 +26,10 @@ export class VideoThumbnailStore {
 			_reset: action,
 			_startPolling: action,
 			_stopPolling: action,
+			dispose: action,
 		});
 
-		reaction(
+		this.disposeReaction = reaction(
 			() => this.videoId,
 			(newVideoId, oldVideoId) => {
 				if (newVideoId && newVideoId !== oldVideoId) {
@@ -174,6 +176,15 @@ export class VideoThumbnailStore {
 			if (this.fetchController && signal === this.fetchController.signal) {
 				this.fetchController = null;
 			}
+		}
+	}
+
+	dispose(): void {
+		this._reset();
+		if (this.disposeReaction) {
+			this.disposeReaction();
+			this.disposeReaction = null;
+			console.log("VideoThumbnailStore: Reaction disposed.");
 		}
 	}
 } 

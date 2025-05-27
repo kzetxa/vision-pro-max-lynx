@@ -28,10 +28,11 @@ const VimeoThumbnail: React.FC<VimeoThumbnailProps> = observer(({ videoId, child
 	// Update the store when the videoId prop changes
 	useEffect(() => {
 		store.setVideoId(videoId);
-		// Optional: Cleanup on unmount if needed, though reaction might handle it by videoId becoming null
-		// return () => {
-		//   store.setVideoId(null); // This would trigger a reset in the store
-		// };
+
+		// Cleanup function to dispose the store's reaction when the component unmounts
+		return () => {
+			store.dispose();
+		};
 	}, [videoId, store]);
 
 	const { thumbnailUrl, status, errorMessage } = store;

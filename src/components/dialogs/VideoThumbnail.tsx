@@ -1,81 +1,80 @@
-import React, { useEffect, useState, HTMLAttributes } from "react";
+import React, { useEffect, useMemo, HTMLAttributes } from "react";
+import { observer } from "mobx-react-lite";
+import { VideoThumbnailStore, ThumbnailStatus } from "../../stores/VideoThumbnailStore"; // Import the new store
 
 interface VimeoThumbnailProps extends HTMLAttributes<HTMLDivElement> {
 	videoId: string;
 	children?: React.ReactNode;
 }
 
-const VimeoThumbnail: React.FC<VimeoThumbnailProps> = ({ videoId, children, style, ...rest }) => {
-	const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+// Placeholder style for when thumbnail is processing or unavailable
+const placeholderStyle: React.CSSProperties = {
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+	backgroundColor: "#4A4A4A", // Darker placeholder background
+	color: "#ccc",
+	fontSize: "0.9em",
+	textAlign: "center",
+	// Ensure these are a good default for your tiles
+	minHeight: 120, // Match typical thumbnail height
+	minWidth: 200,  // Match typical thumbnail width
+};
 
+const VimeoThumbnail: React.FC<VimeoThumbnailProps> = observer(({ videoId, children, style, ...rest }) => {
+	// Instantiate the store. One store instance per thumbnail component.
+	const store = useMemo(() => new VideoThumbnailStore(), []);
+
+	// Update the store when the videoId prop changes
 	useEffect(() => {
-		if (!videoId) {
-			setError("Video ID is required.");
-			setIsLoading(false);
-			return;
-		}
-		const fetchThumbnail = async () => {
-			setIsLoading(true);
-			setError(null);
-			try {
-				const res = await fetch(
-					`https://vimeo.com/api/oembed.json?url=https://vimeo.com/${videoId}`,
-				);
-				const vumbnailUrl = `https://vumbnail.com/${videoId}_medium.jpg`;
-				if (!res.ok) {
-					console.warn("Failed to fetch thumbnail data (status: ${res.status}), using vumbnail.com");
-					setThumbnailUrl(vumbnailUrl);
-				}
-				const data = await res.json();
-				if (data && data.thumbnail_url) {
-					setThumbnailUrl(data.thumbnail_url);
-				} else {
-					console.warn("Thumbnail URL not found in Vimeo response, using vumbnail.com");
-					setThumbnailUrl(vumbnailUrl);
-				}
-			} catch (fetchError: any) {
-				console.error("Error fetching Vimeo thumbnail:", fetchError);
-				setError(fetchError.message || "Could not load thumbnail.");
-				setThumbnailUrl(null); // Ensure no stale thumbnail on error
-			}
-			setIsLoading(false);
-		};
+		store.setVideoId(videoId);
+		// Optional: Cleanup on unmount if needed, though reaction might handle it by videoId becoming null
+		// return () => {
+		//   store.setVideoId(null); // This would trigger a reset in the store
+		// };
+	}, [videoId, store]);
 
-		fetchThumbnail();
-	}, [videoId]);
+	const { thumbnailUrl, status, errorMessage } = store;
 
-	const divStyle: React.CSSProperties = {
-		...style,
-		backgroundImage: thumbnailUrl ? `url(${thumbnailUrl})` : undefined,
+	const combinedStyle: React.CSSProperties = {
+		...style, // User-provided styles take precedence for things like width/height if passed
+		backgroundImage: thumbnailUrl && status === "loaded" ? `url(${thumbnailUrl})` : undefined,
 		backgroundSize: "cover",
 		backgroundPosition: "center",
-		// Ensure a default appearance if the image is loading or fails
-		width: style?.width || 200, // Default width if not provided via style prop
-		height: style?.height || 120, // Default height if not provided via style prop
-		display: style?.display || "flex",
-		alignItems: style?.alignItems || "center",
-		justifyContent: style?.justifyContent || "center",
-		backgroundColor: thumbnailUrl ? undefined : (style?.backgroundColor || "#333"), // Placeholder color
+		// Apply placeholder styles if not loaded or if base style doesn't cover these
+		width: style?.width || placeholderStyle.minWidth,
+		height: style?.height || placeholderStyle.minHeight,
+		display: style?.display || placeholderStyle.display,
+		alignItems: style?.alignItems || placeholderStyle.alignItems,
+		justifyContent: style?.justifyContent || placeholderStyle.justifyContent,
+		backgroundColor: thumbnailUrl && status === "loaded" ? style?.backgroundColor : placeholderStyle.backgroundColor,
+		color: thumbnailUrl && status === "loaded" ? style?.color : placeholderStyle.color,
+		fontSize: style?.fontSize || placeholderStyle.fontSize,
 	};
 
-	if (isLoading) {
-		// You can return a more sophisticated loading placeholder here if needed
-		return <div style={divStyle}>Loading thumbnail...</div>;
-	}
+	let content: React.ReactNode = children; // Default to showing children (e.g., play icon)
 
-	if (error && !thumbnailUrl) {
-		// Display error state or a fallback UI if thumbnail fails but children should still render
-		// For now, just show error, but you might want children to still show with a placeholder background
-		return <div style={divStyle}>Error: {error} {children}</div>;
+	switch (status) {
+		case "loading":
+		case "idle": // Show loading for idle too, as fetch will be triggered by reaction
+			content = <>Loading... {children}</>; // Keep children visible during load
+			break;
+		case "processing":
+			content = <>Video processing... {children}</>;
+			break;
+		case "error":
+			content = <>{errorMessage || "Thumbnail unavailable"} {children}</>;
+			break;
+		case "loaded":
+			// Background image is set by combinedStyle, children are overlaid
+			break;
 	}
 
 	return (
-		<div style={divStyle} {...rest}>
-			{children}
+		<div style={combinedStyle} {...rest}>
+			{content}
 		</div>
 	);
-};
+});
 
 export default VimeoThumbnail;

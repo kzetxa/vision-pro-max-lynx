@@ -298,7 +298,6 @@ async function syncExerciseLibrary() {
 				"Public Name (from Equipment)", 
 				"Over Sort Category", 
 				"Explination 1", "Explination 2", "Explanation 3", "Explanation 4", 
-				// "Status (from look)" // No longer needed for thumbnails directly from here
 			]
 		}).eachPage((pageRecords, fetchNextPage) => {
 			pageRecords.forEach(record => airtableRecords.push(record as any));
@@ -309,17 +308,6 @@ async function syncExerciseLibrary() {
 		if (airtableRecords.length === 0) return;
 
 		const supabaseExercises: SupabaseExercise[] = airtableRecords.map(record => {
-			// const attachments = record.fields["Status (from look)"];
-			// let thumbSmallUrl, thumbLargeUrl, thumbFullUrl;
-			// if (attachments && attachments.length > 0) {
-			// 	const firstAttachment = attachments[0];
-			// 	if (firstAttachment.thumbnails) {
-			// 		thumbSmallUrl = firstAttachment.thumbnails.small?.url;
-			// 		thumbLargeUrl = firstAttachment.thumbnails.large?.url;
-			// 		thumbFullUrl  = firstAttachment.thumbnails.full?.url;
-			// 	}
-			// }
-
 			let vimeoCodeValue;
 			const vimeoVideoField = record.fields["vimeo video"];
 			if (typeof vimeoVideoField === 'string' && vimeoVideoField.includes('vimeo.com')) {
@@ -333,21 +321,6 @@ async function syncExerciseLibrary() {
 
 			const publicNameFromEquipment = record.fields["Public Name (from Equipment)"];
 			const newThumbnailUrl = vimeoCodeValue ? `https://vumbnail.com/${vimeoCodeValue}_medium.jpg` : undefined;
-
-			// if (generateVoiceFiles) {
-			// 	const expl1 = record.fields["Explination 1"];
-			// 	const expl2 = record.fields["Explination 2"];
-			// 	const expl3 = record.fields["Explanation 3"];
-			// 	const expl4 = record.fields["Explanation 4"];
-
-			// 	const combinedExplanations = [expl1, expl2, expl3, expl4]
-			// 		.filter(e => typeof e === 'string' && e.trim() !== '')
-			// 		.join(' \n\n'); // Join with double newline for distinct paragraphs
-
-			// 	if (combinedExplanations) {
-			// 		exerciseDetailText.push(combinedExplanations);
-			// 	}
-			// }
 
 			return {
 				airtable_record_id: record.id,
@@ -562,26 +535,6 @@ async function main() {
 		console.log("Finished sync for workouts.");
 
 		console.log("Sync process completed successfully.");
-
-		// if (generateVoiceFiles) {
-		// 	if (exerciseDetailText.length > 0) {
-		// 		console.log(`\nCollected ${exerciseDetailText.length} exercise detail texts for voice generation:`);
-		// 		// Log the first few entries as samples
-		// 		exerciseDetailText.slice(0, 3).forEach((text, index) => {
-		// 			console.log(`  Sample ${index + 1}: "${text.substring(0, 150)}..."`);
-		// 		});
-		// 		if (exerciseDetailText.length > 3) {
-		// 			console.log(`  ... and ${exerciseDetailText.length - 3} more.`);
-		// 		}
-				// Later, this is where you would call the ElevenLabs function for each text.
-				// For example:
-				// for (const text of exerciseDetailText) {
-				//   await generateAudioWithElevenLabs(text, `exercise_${/* some_identifier_here */}.mp3`);
-				// }
-			// } else {
-			// 	console.log("\nNo exercise detail texts were collected for voice generation.");
-			// }
-		// }
 	} catch (error: any) {
 		console.error("Main sync process failed overall:");
 		if (error && error.message) {

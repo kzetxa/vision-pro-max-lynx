@@ -132,4 +132,25 @@ export const upsertUserVideoUpload = async (
 	}
 };
 
-// Add more Supabase interaction functions as needed 
+export const getOrGenerateAudio = async (exerciseId: string, text: string): Promise<string | null> => {
+	try {
+		const res = await fetch("/.netlify/functions/generate-voice", {
+			method: "POST",
+			body: JSON.stringify({ exerciseId, text }),
+			headers: { "Content-Type": "application/json" },
+		});
+
+		if (!res.ok) {
+			const errorText = await res.text();
+			console.error("Error generating voice audio:", res.status, errorText);
+			throw new Error(`Failed to generate voice: ${res.status} ${errorText}`);
+		}
+
+		const { url } = await res.json();
+
+		return url;
+	} catch (err) {
+		console.error("An unexpected error occurred in getOrGenerateAudio:", err);
+		return null; // Or rethrow, or handle as appropriate
+	}
+}; 

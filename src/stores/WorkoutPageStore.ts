@@ -12,6 +12,7 @@ import {
 	getDisplayableArrayString,
 } from "../lib/utils";
 import type { RootStore } from "./RootStore";
+import { getOrGenerateAudio } from "../lib/supabase";
 
 
 export class WorkoutPageStore {
@@ -22,6 +23,8 @@ export class WorkoutPageStore {
 	isListView: boolean = false;
 	isFinishDialogOpen: boolean = false;
 	allExerciseProgress: {[blockExerciseId: string]: ExerciseProgress} = {};
+	currentExerciseAudioUrl: string | null = null;
+	isAudioLoading: boolean = false;
 
 	// These will be set by an init method or passed if needed
 	private currentWorkoutId: string | null = null;
@@ -36,6 +39,8 @@ export class WorkoutPageStore {
 			isListView: observable,
 			isFinishDialogOpen: observable,
 			allExerciseProgress: observable.deep,
+			currentExerciseAudioUrl: observable,
+			isAudioLoading: observable,
 
 			// Actions
 			initializePage: action,
@@ -44,12 +49,15 @@ export class WorkoutPageStore {
 			closeFinishDialog: action,
 			handleToggleExerciseCompleteList: action,
 			handleFinishWorkout: action,
+			fetchAndSetExerciseAudio: action,
 			// Internal setters for state changes within async operations
 			_setWorkoutData: action,
 			_setLoading: action,
 			_setError: action,
 			_setAllExerciseProgress: action,
 			_clearError: action,
+			_setCurrentExerciseAudioUrl: action,
+			_setAudioLoading: action,
 
 			// Computed properties / getters
 			getBlockExerciseById: computed,
@@ -72,6 +80,12 @@ export class WorkoutPageStore {
 	}
 	_setAllExerciseProgress(progress: {[blockExerciseId: string]: ExerciseProgress}): void {
 		this.allExerciseProgress = progress;
+	}
+	_setCurrentExerciseAudioUrl(url: string | null): void {
+		this.currentExerciseAudioUrl = url;
+	}
+	_setAudioLoading(isLoading: boolean): void {
+		this.isAudioLoading = isLoading;
 	}
 
 	// Method to calculate block completion progress
@@ -183,6 +197,30 @@ export class WorkoutPageStore {
 		// alert("Workout progress cleared!"); 
 		this.isFinishDialogOpen = false;
 	};
+
+	async fetchAndSetExerciseAudio(exerciseId: string, description: string): Promise<void> {
+		if (!exerciseId || !description) {
+			console.warn("fetchAndSetExerciseAudio: exerciseId or description is missing.");
+			this._setCurrentExerciseAudioUrl(null);
+			return;
+		}
+		this._setAudioLoading(true);
+		this._setCurrentExerciseAudioUrl(null); // Clear previous URL
+		try {
+			const url = await getOrGenerateAudio(exerciseId, description);
+			runInAction(() => {
+				this._setCurrentExerciseAudioUrl(url);
+				this._setAudioLoading(false);
+			});
+		} catch (error) {
+			console.error("Error in fetchAndSetExerciseAudio:", error);
+			runInAction(() => {
+				this._setCurrentExerciseAudioUrl(null);
+				this._setAudioLoading(false);
+				// Optionally set an error state for audio fetching
+			});
+		}
+	}
 
 	// Start of new getters
 

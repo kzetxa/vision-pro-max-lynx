@@ -1,7 +1,6 @@
-import { makeObservable, observable, action, computed } from "mobx";
-import type { SupabaseBlockExercise } from "../lib/types"; // Adjust path as needed
-import type { RootStore } from "./RootStore";
+import { action, computed, makeObservable, observable } from "mobx";
 import React from "react"; // Needed for React.FC type
+import type { RootStore } from "./RootStore";
 
 // Define a type for items in our dialog stack
 export interface DialogStackItem {
@@ -12,36 +11,15 @@ export interface DialogStackItem {
 
 export class DialogStore {
 	rootStore: RootStore;
-
 	dialogStack: DialogStackItem[] = [];
-
-	// Exercise Detail Dialog State
-	isExerciseDetailOpen: boolean = false;
-	currentExerciseForDetail: SupabaseBlockExercise | null = null;
-
-	// Potentially more dialog states here in the future
-	// isSomeOtherDialogOpen: boolean = false;
-	// dataForOtherDialog: any = null;
 
 	constructor(rootStore: RootStore) {
 		this.rootStore = rootStore;
 		makeObservable(this, {
-			dialogStack: observable.deep, // Use .deep for arrays of objects
+			dialogStack: observable.shallow, // Use .deep for arrays of objects
 			pushDialog: action,
 			popDialog: action,
 			clearAllDialogs: action,
-			activeDialog: computed, // To easily get the top-most dialog
-			// Exercise Detail Dialog
-			isExerciseDetailOpen: observable,
-			currentExerciseForDetail: observable.ref, // .ref for complex objects if mutations aren't tracked internally
-			openExerciseDetail: action,
-			closeExerciseDetail: action,
-            
-			// Example for other dialogs
-			// isSomeOtherDialogOpen: observable,
-			// dataForOtherDialog: observable.ref,
-			// openSomeOtherDialog: action,
-			// closeSomeOtherDialog: action,
 		});
 	}
 
@@ -83,27 +61,4 @@ export class DialogStore {
 		}
 		return this.dialogStack[this.dialogStack.length - 1];
 	}
-
-	openExerciseDetail = (exercise: SupabaseBlockExercise): void => {
-		this.currentExerciseForDetail = exercise;
-		this.isExerciseDetailOpen = true;
-		console.log("Opening detail for:", exercise);
-	};
-
-	closeExerciseDetail = (): void => {
-		this.isExerciseDetailOpen = false;
-		this.currentExerciseForDetail = null;
-		console.log("Closing exercise detail dialog");
-	};
-
-	// Example for other dialog actions
-	// openSomeOtherDialog = (data: any): void => {
-	//     this.dataForOtherDialog = data;
-	//     this.isSomeOtherDialogOpen = true;
-	// };
-
-	// closeSomeOtherDialog = (): void => {
-	//     this.isSomeOtherDialogOpen = false;
-	//     this.dataForOtherDialog = null;
-	// };
 } 

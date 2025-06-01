@@ -36,8 +36,6 @@ const ExerciseDetailDialog: React.FC<ExerciseDetailDialogProps> = observer(() =>
 			workoutPageStore._setCurrentExerciseAudioUrl(null);
 			workoutPageStore._setAudioLoading(false);
 		};
-		// Depend on the specific details needed for fetching audio and blockExerciseId itself.
-		// workoutPageStore is stable, but including it is good practice if its methods were not bound `action.bound`
 	}, []);
 
 	if (!blockExerciseId) {
@@ -72,16 +70,20 @@ const ExerciseDetailDialog: React.FC<ExerciseDetailDialogProps> = observer(() =>
 					<ExerciseInfoBadges />
 					{isAudioLoading && <p>Loading audio...</p>}
 					{currentExerciseAudioUrl && (
-						<div>
-							<p>Audio URL: <a
-								href={currentExerciseAudioUrl}
-								rel="noopener noreferrer"
-								target="_blank"
-							              >{currentExerciseAudioUrl}</a></p>
+						<div className={styles.audioPlayerWrapper}>
+							<audio
+								autoPlay
+								className={styles.audioPlayer}
+								controls
+								src={currentExerciseAudioUrl}
+							>
+								Your browser does not support the audio element.
+							</audio>
 						</div>
 					)}
-					{!isAudioLoading && !currentExerciseAudioUrl && details && details.exercise && <p>No audio loaded or available.</p>}
-
+					{!isAudioLoading && !currentExerciseAudioUrl && details && details.exercise && (
+						<p>No audio loaded or available.</p>
+					)}
 				</div>
 			</div>
 		</div>

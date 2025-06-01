@@ -8,9 +8,10 @@ interface RequestBody {
 	text: string;
 }
 
-const storeVoice = async (buffer: Buffer, filename: string, text: string, supabase: SupabaseClient): Promise<string> => {
+const storeVoice = async (buffer: Buffer, filename: string, text: string, exerciseId: string, supabase: SupabaseClient): Promise<string> => {
 	const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
 	const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+	const region = process.env.AWS_REGION || 'us-west-2';
 	if (!accessKeyId || !secretAccessKey) {
 		throw new Error('AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY is not set');
 	}
@@ -23,7 +24,7 @@ const storeVoice = async (buffer: Buffer, filename: string, text: string, supaba
 		}
 	});
 
-	const s3Bucket = process.env.VITE_S3_BUCKET;
+	const s3Bucket = process.env.S3_BUCKET;
 	if (!s3Bucket) {
 		throw new Error('S3_BUCKET is not set');
 	}
@@ -36,13 +37,16 @@ const storeVoice = async (buffer: Buffer, filename: string, text: string, supaba
 		ContentType: 'audio/mpeg',
 	}));
 
-	const region = process.env.AWS_REGION || 'us-west-2';
 	const url = `https://${s3Bucket}.s3.${region}.amazonaws.com/${filename}`;
 
-	await supabase
+	const { error } = await supabase
 		.from('exercise_library')
 		.update({ voice: url })
-		.eq('description', text);
+		.eq('id', exerciseId);
+
+	if (error) {
+		console.error('Supabase update failed:', error);
+	}
 
 	return url;
 }
@@ -58,7 +62,7 @@ const fetchElevenLabsAudio = async (text): Promise<Buffer> => {
 		method: 'POST',
 		headers: headers,
 		body: JSON.stringify({
-			text: "text test",
+			text,
 			model_id: 'eleven_monolingual_v1',
 			voice_settings: {
 				stability: 0.5,
@@ -118,11 +122,13 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 
 		if (error && error.code !== "PGRST116") { // PGRST116: "Searched for a single row, but 0 rows were found"
 			console.error("Error fetching exercise voice from Supabase:", error);
-			// Potentially throw error or return null depending on desired handling
 		}
 
 		if (data?.voice) {
-			return data.voice;
+			return {
+				statusCode: 200,
+				body: JSON.stringify({ url: data.voice })
+			};
 		}
 
 		let audioBuffer: Buffer | null = null;
@@ -137,7 +143,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 		try {
 			// Store voice in S3 and Supabase
 			const filename = `${uuidv4()}.mp3`
-			const url = await storeVoice(audioBuffer, filename, text, supabase)
+			const url = await storeVoice(audioBuffer, filename, text, exerciseId, supabase)
 			return { 
 				statusCode: 200, 
 				body: JSON.stringify({ url })

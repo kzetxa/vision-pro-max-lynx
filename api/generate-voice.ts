@@ -54,11 +54,11 @@ const storeVoice = async (buffer: Buffer, filename: string, text: string, exerci
 const fetchElevenLabsAudio = async (text): Promise<Buffer> => {
 	const headers = new Headers()
 	headers.append('Content-Type', 'application/json')
-	if (process.env.VITE_ELEVENLABS_API_KEY) {
-		headers.append('xi-api-key', process.env.VITE_ELEVENLABS_API_KEY)
+	if (process.env.ELEVENLABS_API_KEY) {
+		headers.append('xi-api-key', process.env.ELEVENLABS_API_KEY)
 	}
 
-	const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${process.env.VITE_ELEVENLABS_VOICE_ID}`, {
+	const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${process.env.ELEVENLABS_VOICE_ID}`, {
 		method: 'POST',
 		headers: headers,
 		body: JSON.stringify({

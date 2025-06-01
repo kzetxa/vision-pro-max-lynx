@@ -1,3 +1,5 @@
+import { getClientIdFromUrl } from "./utils";
+
 export interface ExerciseProgress {
   currentSet: number;
   isExerciseDone: boolean;
@@ -9,19 +11,16 @@ interface WorkoutProgressStorage {
   [blockExerciseId: string]: ExerciseProgress;
 }
 
-const getLocalStorageKey = (workoutId: string, clientId: string): string => {
-	return `workoutProgress_${workoutId}_${clientId}`;
+const getLocalStorageKey = (workoutId: string): string => {
+	return `workoutProgress_${workoutId}_${getClientIdFromUrl()}`;
 };
 
 /**
  * Loads progress for all exercises in a given workout and client.
  */
-export const loadWorkoutProgressFromStorage = (
-	workoutId: string,
-	clientId: string,
-): WorkoutProgressStorage => {
-	if (!workoutId || !clientId) return {};
-	const key = getLocalStorageKey(workoutId, clientId);
+export const loadWorkoutProgressFromStorage = (workoutId?: string): WorkoutProgressStorage => {
+	if (!workoutId) return {};
+	const key = getLocalStorageKey(workoutId);
 	try {
 		const storedProgress = localStorage.getItem(key);
 		return storedProgress ? JSON.parse(storedProgress) : {};
@@ -36,14 +35,13 @@ export const loadWorkoutProgressFromStorage = (
  */
 export const saveExerciseProgressToStorage = (
 	workoutId: string,
-	clientId: string,
 	blockExerciseId: string,
 	progress: ExerciseProgress,
 ): void => {
-	if (!workoutId || !clientId || !blockExerciseId) return;
-	const key = getLocalStorageKey(workoutId, clientId);
+	if (!workoutId || !blockExerciseId) return;
+	const key = getLocalStorageKey(workoutId);
 	try {
-		const currentWorkoutProgress = loadWorkoutProgressFromStorage(workoutId, clientId);
+		const currentWorkoutProgress = loadWorkoutProgressFromStorage(workoutId);
 		const updatedWorkoutProgress: WorkoutProgressStorage = {
 			...currentWorkoutProgress,
 			[blockExerciseId]: progress,
@@ -57,15 +55,12 @@ export const saveExerciseProgressToStorage = (
 /**
  * Clears all progress for a given workout and client.
  */
-export const clearWorkoutProgressInStorage = (
-	workoutId: string,
-	clientId: string,
-): void => {
-	if (!workoutId || !clientId) return;
-	const key = getLocalStorageKey(workoutId, clientId);
+export const clearWorkoutProgressInStorage = (workoutId: string): void => {
+	if (!workoutId) return;
+	const key = getLocalStorageKey(workoutId);
 	try {
 		localStorage.removeItem(key);
-		console.log(`Cleared progress for workout ${workoutId}, client ${clientId}`);
+		console.log(`Cleared progress for workout ${workoutId}, client ${getClientIdFromUrl()}`);
 	} catch (error) {
 		console.error("Error clearing progress from local storage:", error);
 	}

@@ -10,6 +10,7 @@ import {
 import {
 	parseSetsAndReps,
 	getDisplayableArrayString,
+	getClientIdFromUrl,
 } from "../lib/utils";
 import type { RootStore } from "./RootStore";
 import { getOrGenerateAudio } from "../lib/supabase";
@@ -27,8 +28,7 @@ export class WorkoutPageStore {
 	isAudioLoading: boolean = false;
 
 	// These will be set by an init method or passed if needed
-	private currentWorkoutId: string | null = null;
-	private currentClientId: string | null = null;
+	private currentWorkoutId?: string;
 
 	constructor(rootStore: RootStore) {
 		this.rootStore = rootStore;
@@ -103,16 +103,8 @@ export class WorkoutPageStore {
 		return totalExercises > 0 ? (completedExercises / totalExercises) * 100 : 0;
 	};
 
-	async initializePage(workoutId: string, clientId: string): Promise<void> {
-		if (this.currentWorkoutId === workoutId && !this.error && !this.loading && this.workoutData) {
-			// Data for this workoutId already loaded, no need to re-fetch unless forced
-			// Or if previous load resulted in error, allow retry.
-			// console.log("Data already loaded for", workoutId);
-			// return;
-		}
-        
+	async initializePage(workoutId: string): Promise<void> {
 		this.currentWorkoutId = workoutId;
-		this.currentClientId = clientId;
 
 		if (!this.currentWorkoutId) {
 			this._setError("Workout ID is missing.");
@@ -127,10 +119,8 @@ export class WorkoutPageStore {
 			runInAction(() => {
 				if (data) {
 					this._setWorkoutData(data);
-					if (this.currentClientId) {
-						const progress = loadWorkoutProgressFromStorage(this.currentWorkoutId!, this.currentClientId);
-						this._setAllExerciseProgress(progress);
-					}
+					const progress = loadWorkoutProgressFromStorage(this.currentWorkoutId);
+					this._setAllExerciseProgress(progress);
 				} else {
 					this._setError("Workout not found.");
 					this._setWorkoutData(null); // Clear stale data
@@ -161,9 +151,9 @@ export class WorkoutPageStore {
 
 	handleToggleExerciseCompleteList = (
 		blockExerciseId: string,
-		exerciseDefinition: SupabaseBlockExercise, // Ensure this type is correctly imported/defined
+		exerciseDefinition: SupabaseBlockExercise,
 	): void => {
-		if (!this.currentWorkoutId || !this.currentClientId) return;
+		if (!this.currentWorkoutId || !getClientIdFromUrl()) return;
 
 		const existingProgress = this.allExerciseProgress[blockExerciseId];
 		const isCurrentlyComplete = !!existingProgress?.isExerciseDone;
@@ -177,24 +167,22 @@ export class WorkoutPageStore {
 			currentSet: newCompletionState ? totalSets : 0,
 			isExerciseDone: newCompletionState,
 		};
-        
+
 		// Create a new object for the progress map to ensure MobX picks up the change
 		const newAllProgress = {
 			...this.allExerciseProgress,
 			[blockExerciseId]: updatedProgress,
 		};
-		this._setAllExerciseProgress(newAllProgress); // Use action to update
+		this._setAllExerciseProgress(newAllProgress);
 
-		saveExerciseProgressToStorage(this.currentWorkoutId, this.currentClientId, blockExerciseId, updatedProgress);
+		saveExerciseProgressToStorage(this.currentWorkoutId, blockExerciseId, updatedProgress);
 	};
 
 	handleFinishWorkout = (): void => {
-		if (!this.currentWorkoutId || !this.currentClientId) return;
+		if (!this.currentWorkoutId || !getClientIdFromUrl()) return;
 
-		clearWorkoutProgressInStorage(this.currentWorkoutId, this.currentClientId);
-		this._setAllExerciseProgress({}); // Use action to update
-		// Consider if an alert is still needed and how to trigger it (e.g., a callback or an observable status)
-		// alert("Workout progress cleared!"); 
+		clearWorkoutProgressInStorage(this.currentWorkoutId);
+		this._setAllExerciseProgress({});
 		this.isFinishDialogOpen = false;
 	};
 

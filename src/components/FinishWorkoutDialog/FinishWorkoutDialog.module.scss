@@ -2,28 +2,25 @@
 
 // Default trigger button style if no custom class is provided
 .defaultTriggerButton {
-  all: unset;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: theme.$border-radius-md;
-  padding: theme.$spacing-sm theme.$spacing-md;
-  font-size: 0.95em;
-  font-weight: 500;
+  background: #161b22;
+  color: #e6edf3;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1em;
+  font-weight: 600;
   cursor: pointer;
-  background-color: theme.$accent-primary;
-  color: white;
-  transition: background-color theme.$transition-fast;
-  margin: 2rem auto; // Matches original inline style
-  display: block;    // Matches original inline style
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s;
+  outline: none;
+  box-shadow: none;
+  margin: 0 auto;
+  display: block;
 
-  &:hover {
-    background-color: theme.$accent-primary-hover;
-  }
-
-  &:focus-visible {
-    outline: 2px solid theme.$accent-primary;
-    outline-offset: 2px;
+  &:hover, &:focus {
+    background: #21262d;
+    border-color: #238636;
+    box-shadow: 0 0 12px 2px #23863655, 0 1.5px 0 #23863633;
+    color: #e6edf3;
   }
 }
 
@@ -86,12 +83,18 @@
   font-size: 0.95em;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color theme.$transition-fast, box-shadow theme.$transition-fast;
+  transition: background-color theme.$transition-fast, box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s;
+
+  &:hover, &:focus-visible {
+    box-shadow: 0 0 12px 2px #23863655, 0 1.5px 0 #23863633;
+    background: rgba(35, 134, 54, 0.07); // Subtle greenish glow background
+    border-color: #238636;
+    outline: none;
+  }
 
   &:focus-visible {
-    outline: 2px solid theme.$accent-primary;
+    outline: 2px solid #238636;
     outline-offset: 2px;
-    box-shadow: 0 0 0 2px theme.$bg-primary, 0 0 0 4px theme.$accent-primary;
   }
 }
 
@@ -99,9 +102,13 @@
   composes: dialogButton;
   background-color: theme.$accent-primary;
   color: white;
+  transition: background-color theme.$transition-fast, box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s;
 
-  &:hover {
+  &:hover, &:focus-visible {
     background-color: theme.$accent-primary-hover;
+    box-shadow: 0 0 12px 2px #23863699, 0 1.5px 0 #23863633;
+    border-color: #238636;
+    outline: none;
   }
 }
 
@@ -110,9 +117,13 @@
   background-color: theme.$bg-tertiary;
   color: theme.$text-primary;
   border: theme.$border-width-thin solid theme.$border-primary;
+  transition: background-color theme.$transition-fast, box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s;
 
-  &:hover {
-    background-color: theme.$border-primary;
+  &:hover, &:focus-visible {
+    background: rgba(35, 134, 54, 0.07);
+    box-shadow: 0 0 12px 2px #23863655, 0 1.5px 0 #23863633;
+    border-color: #238636;
+    outline: none;
   }
 }
 

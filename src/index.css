@@ -15,8 +15,41 @@
 }
 
 html {
-	background: linear-gradient(to bottom, #403147, #0e182c, #194633, #252931);
-	background-attachment: fixed;
+  background:
+    linear-gradient(135deg, #161b22 0%, #0a110a 60%, #1e2d24 100%, #23863622 100%),
+    radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(35, 134, 54, 0.18) 0%, rgba(35, 134, 54, 0.08) 40%, transparent 70%);
+  background-size: 200% 200%, 100% 100%;
+  animation: breathingGradient 12s ease-in-out infinite, rippleMove 4s linear infinite;
+  background-attachment: fixed;
+}
+
+@keyframes breathingGradient {
+  0% { background-position: 0% 50%, 50% 50%; }
+  50% { background-position: 100% 50%, 50% 50%; }
+  100% { background-position: 0% 50%, 50% 50%; }
+}
+
+@keyframes rippleMove {
+  0% {
+    --ripple-x: 20%;
+    --ripple-y: 80%;
+  }
+  25% {
+    --ripple-x: 80%;
+    --ripple-y: 70%;
+  }
+  50% {
+    --ripple-x: 60%;
+    --ripple-y: 20%;
+  }
+  75% {
+    --ripple-x: 30%;
+    --ripple-y: 40%;
+  }
+  100% {
+    --ripple-x: 20%;
+    --ripple-y: 80%;
+  }
 }
 
 body {

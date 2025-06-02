@@ -1,0 +1,26 @@
+.toggleViewButton {
+  background: #161b22;
+  color: #e6edf3;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s;
+  outline: none;
+  box-shadow: none;
+
+  &:hover, &:focus {
+    background: #21262d;
+    border-color: #238636;
+    box-shadow: 0 0 12px 2px #23863655, 0 1.5px 0 #23863633;
+    color: #e6edf3;
+  }
+}
+
+.icon {
+  margin-right: 0.5rem;
+} 

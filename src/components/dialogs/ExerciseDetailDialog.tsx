@@ -7,6 +7,10 @@ import ExerciseVideoPlayer from "./ExerciseVideoPlayer/ExerciseVideoPlayer";
 import ExerciseDetailHeader from "./ExerciseDetailHeader";
 import ExerciseInfoBadges from "./ExerciseInfoBadges";
 
+const composeText = (title: string, repsText: string, description: string) => {
+	return `${title}, ${repsText}, ${description}`;
+};
+
 export interface ExerciseDetailDialogProps { 
   blockExerciseId?: string;
   exerciseId?: string;
@@ -24,7 +28,8 @@ const ExerciseDetailDialog: React.FC<ExerciseDetailDialogProps> = observer(() =>
 	// Effect to fetch audio
 	useEffect(() => {
 		if (details && details.exercise && details.exercise.id && details.description) {
-			workoutPageStore.fetchAndSetExerciseAudio(details.exercise.id, details.description);
+			const text = composeText(details.exerciseName, details.repsText || "", details.description);
+			workoutPageStore.fetchAndSetExerciseAudio(details.exercise.id, text);
 		} else if (blockExerciseId) { // Only warn or clear if blockExerciseId was present but details were not sufficient
 			// console.warn("Cannot fetch audio: Missing exercise ID or description in details for blockExerciseId:", blockExerciseId);
 			workoutPageStore._setCurrentExerciseAudioUrl(null);

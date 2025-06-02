@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import type { SupabasePopulatedBlock, SupabaseBlockExercise } from "../../lib/types"; // Adjust path
 import type { ExerciseProgress } from "../../lib/localStorage"; // Adjust path
 import ExerciseListItem from "./ExerciseListItem";
-import styles from "../../pages/WorkoutPage.module.scss"; // Use existing styles
+import styles from "./WorkoutBlockList.module.scss"; // Use new styles
 
 interface WorkoutBlockListProps {
     blocks: SupabasePopulatedBlock[];

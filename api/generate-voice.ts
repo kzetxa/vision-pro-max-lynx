@@ -63,13 +63,16 @@ const fetchElevenLabsAudio = async (text): Promise<Buffer> => {
 		headers: headers,
 		body: JSON.stringify({
 			text,
-			model_id: 'eleven_monolingual_v1',
+			model_id: "eleven_turbo_v2_5",
 			voice_settings: {
-				stability: 0.5,
+				stability: 0.4,
 				similarity_boost: 0.75,
+				style: 0.1,
+				use_speaker_boost: true
 			},
-		}),
-	})
+			optimize_streaming_latency: 0
+		})
+	});
 
 	if (!res.ok) throw new Error('TTS generation failed')
 	return Buffer.from(await res.arrayBuffer())

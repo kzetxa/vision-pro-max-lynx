@@ -23,9 +23,12 @@
 	color: #fff;
 	cursor: pointer;
 	text-align: left;
+	transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s;
 
-	&:hover {
-		background-color: theme.$bg-tertiary; // Slight hover effect
+	&:hover, &:focus {
+		background: rgba(35, 134, 54, 0.07); // Subtle greenish glow background
+		box-shadow: 0 0 12px 2px #23863655, 0 1.5px 0 #23863633;
+		color: #e6edf3;
 	}
 
 	&[data-state='open'] {

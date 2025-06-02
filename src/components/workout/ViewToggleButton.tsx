@@ -1,7 +1,7 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
 import { ListBulletIcon, GridIcon } from "@radix-ui/react-icons";
-import styles from "../../pages/WorkoutPage.module.scss"; // Use existing styles for now
+import styles from "./ViewToggleButton.module.scss";
 
 interface ViewToggleButtonProps {
 	isListView: boolean;
@@ -13,17 +13,16 @@ const ViewToggleButton: React.FC<ViewToggleButtonProps> = observer(({ isListView
 		<div style={{ display: "flex", justifyContent: "flex-end", width: "100%", marginBottom: "1rem" }}>
 			<button 
 				className={styles.toggleViewButton}
-				onClick={onToggle} 
-				style={{ padding: "0.5rem 1rem", cursor: "pointer", display: "flex", alignItems: "center" }}
+				onClick={onToggle}
 			>
 				{isListView ? (
 					<>
-						<GridIcon style={{ marginRight: "0.5rem" }} />
+						<GridIcon className={styles.icon} />
 						Grid View
 					</>
 				) : (
 					<>
-						<ListBulletIcon style={{ marginRight: "0.5rem" }} />
+						<ListBulletIcon className={styles.icon} />
 						List View
 					</>
 				)}

@@ -62,8 +62,6 @@ const WorkoutPage: React.FC = observer(() => {
 					onConfirmFinish={workoutPageStore.handleFinishWorkout}
 					onOpenChange={(open) => open ? workoutPageStore.openFinishDialog() : workoutPageStore.closeFinishDialog()}
 					open={workoutPageStore.isFinishDialogOpen} 
-					triggerButtonClassName={`${styles.dialogButton} ${styles.dialogButtonPrimary}`}
-					triggerButtonStyle={{ margin: "2rem auto", display: "block" }}
 				/>
 			</>
 		</div>

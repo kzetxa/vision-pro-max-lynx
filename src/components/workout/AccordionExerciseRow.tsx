@@ -4,7 +4,7 @@ import * as Checkbox from "@radix-ui/react-checkbox";
 import { CheckIcon } from "@radix-ui/react-icons";
 import type { SupabaseBlockExercise } from "../../lib/types";
 import { parseSetsAndReps } from "../../lib/utils";
-import styles from "../../pages/WorkoutPage.module.scss";
+import styles from "./AccordionExerciseRow.module.scss";
 import { useStore } from "../../contexts/StoreContext";
 import ExerciseDetailDialog from "../dialogs/ExerciseDetailDialog";
 
@@ -35,30 +35,6 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 		repsText = blockExercise.sets_and_reps_text;
 	}
 
-	const imageContainerStyle: React.CSSProperties = {
-		width: 60,
-		height: 60,
-		borderRadius: 8,
-		backgroundColor: "#e0e0e0", // Fallback background
-		display: "flex",
-		alignItems: "center",
-		justifyContent: "center",
-		marginRight: "1rem",
-		overflow: "hidden", // Ensure image respects border radius
-	};
-
-	const actualImageStyle: React.CSSProperties = {
-		width: "100%",
-		height: "100%",
-		objectFit: "cover", // Crop image to fit container
-	};
-
-	const placeholderTextStyle: React.CSSProperties = {
-		fontSize: "0.8em",
-		color: "#555",
-		textAlign: "center",
-	};
-
 	const handleRowClick = () => {
 		if (exercise) {
 			dialogStore.pushDialog(ExerciseDetailDialog, { 
@@ -72,23 +48,22 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 		<div 
 			className={styles.accordionExerciseRow}
 			onClick={handleRowClick}
-			style={{ display: "flex", alignItems: "center", padding: "0.75rem 0", cursor: "pointer" }}
 		>
-			<div style={imageContainerStyle}>
+			<div className={styles.imageContainer}>
 				{exercise.thumbnail ? (
 					<img
 						alt={exercise.current_name}
+						className={styles.actualImage}
 						src={exercise.thumbnail}
-						style={actualImageStyle}
 					/>
 				) : (
-					<span style={placeholderTextStyle}>Image</span> // Fallback text
+					<span className={styles.placeholderText}>Image</span>
 				)}
 			</div>
 			<div style={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
 				<span className={styles.exerciseTitle}>{exercise.current_name}</span>
 				{repsText && (
-					<span className={styles.exerciseRepsSupportingText} style={{ color: "#888", fontSize: "0.9em" }}>
+					<span className={styles.exerciseRepsSupportingText}>
 						{repsText}
 					</span>
 				)}
@@ -96,7 +71,7 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 			<Checkbox.Root
 				aria-label={`Mark ${exercise.current_name} as complete`}
 				checked={isComplete}
-				className={styles.modernCheckboxRoot}
+				className={styles.checkboxRoot}
 				onCheckedChange={onToggleComplete}
 				onClick={(e) => {
 					e.stopPropagation();
@@ -107,13 +82,8 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 						onToggleComplete();
 					}
 				}}
-				style={{ 
-					width: 20, height: 20, borderRadius: 4, border: "1px solid #ccc", 
-					display: "flex", alignItems: "center", justifyContent: "center",
-					marginLeft: "1rem",
-				}}
 			>
-				<Checkbox.Indicator className={styles.modernCheckboxIndicator}>
+				<Checkbox.Indicator className={styles.checkboxIndicator}>
 					<CheckIcon />
 				</Checkbox.Indicator>
 			</Checkbox.Root>

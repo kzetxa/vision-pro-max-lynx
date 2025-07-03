@@ -94,3 +94,21 @@
 @keyframes overlayShow { ... }
 @keyframes contentShow { ... }
 */ 
+
+.finishButton {
+	background-color: theme.$accent-primary;
+	color: white;
+	padding: 14px 20px;
+	border-radius: theme.$border-radius-lg;
+	font-size: 1.1em;
+	font-weight: 600;
+	cursor: pointer;
+	border: none;
+	width: 100%;
+	margin-top: 24px;
+	transition: background-color 0.2s;
+
+	&:hover {
+		background-color: theme.$accent-primary-hover;
+	}
+} 

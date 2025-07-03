@@ -30,6 +30,7 @@ module.exports = {
     "ecmaVersion": 11,
     "sourceType": "module",
     "tsconfigRootDir": __dirname,
+    "project": ["./tsconfig.json"],
   },
   "plugins": [
     // Add plugins here when needed for all non TS / TSX files.
@@ -118,6 +119,7 @@ module.exports = {
       "parser": "@typescript-eslint/parser",
       "parserOptions": {
         "project": "./tsconfig.json",
+        "moduleResolution": "node"
       },
       "plugins": [
         "@typescript-eslint",
@@ -137,6 +139,7 @@ module.exports = {
       "parser": "@typescript-eslint/parser",
       "parserOptions": {
         "project": "./tsconfig.json",
+        "moduleResolution": "node"
       },
       "plugins": [
         "@typescript-eslint",
@@ -238,6 +241,7 @@ module.exports = {
       "parser": "@typescript-eslint/parser",
       "parserOptions": {
         "project": "./tsconfig.json",
+        "moduleResolution": "node"
       },
       "plugins": [
         "@typescript-eslint",

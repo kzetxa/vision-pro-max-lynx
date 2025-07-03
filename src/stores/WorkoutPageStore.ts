@@ -1,6 +1,6 @@
 import { makeObservable, observable, action, runInAction, computed } from "mobx";
 import { fetchWorkoutDetailsById } from "../lib/api";
-import type { SupabasePopulatedWorkout, SupabaseBlockExercise, SupabasePopulatedBlock, SupabaseExercise } from "../lib/types";
+import type { SupabasePopulatedWorkout, SupabaseBlockExercise, SupabasePopulatedBlock, SupabaseExercise, WorkoutSummary } from "../lib/types";
 import {
 	loadWorkoutProgressFromStorage,
 	clearWorkoutProgressInStorage,
@@ -13,7 +13,7 @@ import {
 	getClientIdFromUrl,
 } from "../lib/utils";
 import type { RootStore } from "./RootStore";
-import { getOrGenerateAudio } from "../lib/supabase";
+import { getOrGenerateAudio, getWorkoutSummary, saveWorkoutSummary } from "../lib/supabase";
 
 
 export class WorkoutPageStore {
@@ -26,6 +26,9 @@ export class WorkoutPageStore {
 	allExerciseProgress: {[blockExerciseId: string]: ExerciseProgress} = {};
 	currentExerciseAudioUrl: string | null = null;
 	isAudioLoading: boolean = false;
+	workoutSummary: WorkoutSummary | null = null;
+	isSummaryLoading: boolean = false;
+	startTime: number = Date.now();
 
 	// These will be set by an init method or passed if needed
 	private currentWorkoutId?: string;
@@ -41,6 +44,9 @@ export class WorkoutPageStore {
 			allExerciseProgress: observable.deep,
 			currentExerciseAudioUrl: observable,
 			isAudioLoading: observable,
+			workoutSummary: observable,
+			isSummaryLoading: observable,
+			startTime: observable,
 
 			// Actions
 			initializePage: action,
@@ -50,6 +56,7 @@ export class WorkoutPageStore {
 			handleToggleExerciseCompleteList: action,
 			handleFinishWorkout: action,
 			fetchAndSetExerciseAudio: action,
+			checkAndLoadSummary: action,
 			// Internal setters for state changes within async operations
 			_setWorkoutData: action,
 			_setLoading: action,
@@ -58,11 +65,14 @@ export class WorkoutPageStore {
 			_clearError: action,
 			_setCurrentExerciseAudioUrl: action,
 			_setAudioLoading: action,
+			_setWorkoutSummary: action,
+			_setSummaryLoading: action,
 
 			// Computed properties / getters
 			getBlockExerciseById: computed,
 			getExerciseById: computed,
 			getExerciseProgressState: computed,
+			workoutStats: computed,
 		});
 	}
 
@@ -87,6 +97,12 @@ export class WorkoutPageStore {
 	_setAudioLoading(isLoading: boolean): void {
 		this.isAudioLoading = isLoading;
 	}
+	_setWorkoutSummary(summary: WorkoutSummary | null): void {
+		this.workoutSummary = summary;
+	}
+	_setSummaryLoading(loading: boolean): void {
+		this.isSummaryLoading = loading;
+	}
 
 	// Method to calculate block completion progress
 	calculateBlockProgress = (block: SupabasePopulatedBlock): number => {
@@ -105,21 +121,23 @@ export class WorkoutPageStore {
 
 	async initializePage(workoutId: string): Promise<void> {
 		this.currentWorkoutId = workoutId;
-
-		if (!this.currentWorkoutId) {
-			this._setError("Workout ID is missing.");
+		this.startTime = Date.now();
+		this._setLoading(true);
+		this._clearError(); // Clear previous errors before a new fetch attempt
+		
+		await this.checkAndLoadSummary();
+		if(this.workoutSummary) {
 			this._setLoading(false);
+			this.openFinishDialog();
 			return;
 		}
 
-		this._setLoading(true);
-		this._clearError(); // Clear previous errors before a new fetch attempt
 		try {
-			const data = await fetchWorkoutDetailsById(this.currentWorkoutId);
+			const data = await fetchWorkoutDetailsById(workoutId);
 			runInAction(() => {
 				if (data) {
 					this._setWorkoutData(data);
-					const progress = loadWorkoutProgressFromStorage(this.currentWorkoutId);
+					const progress = loadWorkoutProgressFromStorage(workoutId);
 					this._setAllExerciseProgress(progress);
 				} else {
 					this._setError("Workout not found.");
@@ -134,6 +152,25 @@ export class WorkoutPageStore {
 				this._setWorkoutData(null); // Clear stale data
 				this._setLoading(false);
 			});
+		}
+	}
+
+	async checkAndLoadSummary(): Promise<void> {
+		const clientId = getClientIdFromUrl();
+		if (!this.currentWorkoutId || !clientId) return;
+		
+		this._setSummaryLoading(true);
+		try {
+			const summary = await getWorkoutSummary(this.currentWorkoutId, clientId);
+			runInAction(() => {
+				if (summary) {
+					this._setWorkoutSummary(summary);
+				}
+				this._setSummaryLoading(false);
+			});
+		} catch (error) {
+			console.error("Failed to check for existing workout summary", error);
+			runInAction(() => this._setSummaryLoading(false));
 		}
 	}
 
@@ -178,12 +215,75 @@ export class WorkoutPageStore {
 		saveExerciseProgressToStorage(this.currentWorkoutId, blockExerciseId, updatedProgress);
 	};
 
-	handleFinishWorkout = (): void => {
-		if (!this.currentWorkoutId || !getClientIdFromUrl()) return;
+	get workoutStats() {
+		if (this.workoutSummary) {
+			return {
+				totalTime: new Date(this.workoutSummary.total_time_seconds * 1000).toISOString().substr(14, 5),
+				sets: this.workoutSummary.total_sets_completed,
+				reps: this.workoutSummary.total_reps_completed,
+				skipped: this.workoutSummary.total_sets_skipped,
+			};
+		}
+		
+		if (!this.workoutData) return null;
 
-		clearWorkoutProgressInStorage(this.currentWorkoutId);
-		this._setAllExerciseProgress({});
-		this.isFinishDialogOpen = false;
+		let setsCompleted = 0;
+		let repsCompleted = 0;
+		let setsSkipped = 0;
+		
+		this.workoutData.blocks.forEach(block => {
+			block.block_exercises.forEach(be => {
+				const progress = this.allExerciseProgress[be.id];
+				const { sets, reps } = parseSetsAndReps(be);
+				
+				if (progress?.isExerciseDone) {
+					setsCompleted += sets;
+					repsCompleted += sets * reps;
+				} else {
+					setsSkipped += sets;
+				}
+			});
+		});
+
+		const totalTimeSeconds = Math.round((Date.now() - this.startTime) / 1000);
+		
+		return {
+			totalTime: new Date(totalTimeSeconds * 1000).toISOString().substr(14, 5),
+			sets: setsCompleted,
+			reps: repsCompleted,
+			skipped: setsSkipped,
+		};
+	}
+
+	handleFinishWorkout = async (): Promise<void> => {
+		const clientId = getClientIdFromUrl();
+		if (!this.currentWorkoutId || !clientId || !this.workoutData) return;
+		
+		const stats = this.workoutStats;
+		if (!stats) return;
+
+		const totalTimeSeconds = Math.round((Date.now() - this.startTime) / 1000);
+
+		const summaryData: WorkoutSummary = {
+			workout_id: this.currentWorkoutId,
+			client_id: clientId,
+			total_time_seconds: totalTimeSeconds,
+			total_sets_completed: stats.sets,
+			total_reps_completed: stats.reps,
+			total_sets_skipped: stats.skipped,
+		};
+
+		try {
+			await saveWorkoutSummary(summaryData);
+			runInAction(() => {
+				this._setWorkoutSummary(summaryData);
+				clearWorkoutProgressInStorage(this.currentWorkoutId!);
+				this.openFinishDialog();
+			});
+		} catch (error) {
+			console.error("Failed to save workout summary", error);
+			// Optionally set an error state
+		}
 	};
 
 	async fetchAndSetExerciseAudio(exerciseId: string, description: string): Promise<void> {

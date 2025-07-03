@@ -4,10 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
     "build": "tsc && vite build",
+    "dev": "vite",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+	"netlify:dev": "netlify dev",
+    "preview": "vite preview",
+	"supabase:sync:local": "tsx sync.ts --local",
+	"supabase:sync:remote": "tsx sync.ts",
+	"supabase:reset": "supabase db reset",
+	"supabase:push": "supabase db push"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.821.0",

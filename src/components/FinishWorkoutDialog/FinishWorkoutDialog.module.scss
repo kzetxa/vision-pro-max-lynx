@@ -26,138 +26,215 @@
 
 // --- Copied Radix Dialog Styles (from WorkoutPage.module.scss) ---
 .dialogOverlay {
-  background-color: theme.$dialog-overlay-bg;
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  animation: overlayShow theme.$transition-fast forwards;
+	background-color: rgba(0, 0, 0, 0.6);
+	position: fixed;
+	inset: 0;
+	z-index: 999;
 }
 
 .dialogContent {
-  background-color: theme.$dialog-content-bg;
-  border-radius: theme.$dialog-content-radius;
-  box-shadow: theme.$dialog-content-shadow;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90vw;
-  max-width: 480px;
-  max-height: 85vh;
-  padding: theme.$dialog-content-padding;
-  color: theme.$text-primary;
-  border: theme.$border-width-thin solid theme.$border-primary;
-  z-index: 51;
-  animation: contentShow theme.$transition-fast forwards;
-  overflow-y: auto;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	background-color: #1c1c1e; /* Dark background */
+	color: #ffffff;
+	border-radius: 18px;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 90vw;
+	max-width: 480px;
+	max-height: 85vh;
+	padding: 24px;
+	overflow-y: auto;
+	z-index: 1000;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
 }
 
+/* Header */
 .dialogTitle {
-  margin: 0 0 theme.$spacing-md 0;
-  font-weight: 600;
-  font-size: 1.3em;
-  color: theme.$text-headings;
+	font-size: 28px;
+	font-weight: bold;
+	text-align: center;
+	margin: 0;
 }
 
-.dialogDescription {
-  margin-bottom: theme.$spacing-lg;
-  color: theme.$text-primary;
-  font-size: 1em;
-  line-height: 1.6;
+.summaryHeader {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 16px;
 }
 
+.headerIcons {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	font-size: 16px;
+	color: #8e8e93;
+}
+
+.headerIcons > span {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+/* Tabs */
+.tabContainer {
+	display: flex;
+	background-color: #3a3a3c;
+	border-radius: 10px;
+	padding: 4px;
+}
+
+.tabButton {
+	flex: 1;
+	padding: 10px;
+	border: none;
+	background-color: transparent;
+	color: #ffffff;
+	font-size: 16px;
+	font-weight: 600;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: background-color 0.2s;
+
+	&.active {
+		background-color: #5d5d67;
+	}
+}
+
+/* Stats Grid */
+.statsGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+}
+
+.statCard {
+	background-color: #2c2c2e;
+	border-radius: 12px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+}
+
+.statValue {
+	font-size: 24px;
+	font-weight: bold;
+}
+
+.statLabel {
+	font-size: 14px;
+	color: #8e8e93;
+}
+
+/* Section Title */
+.sectionTitle {
+	font-size: 18px;
+	font-weight: 600;
+	margin: 12px 0 0;
+	text-align: center;
+}
+
+/* Donut Chart Placeholder */
+.donutChartPlaceholder {
+	background-color: #2c2c2e;
+	border-radius: 12px;
+	padding: 20px;
+	text-align: center;
+	color: #8e8e93;
+}
+
+.chartText {
+	font-size: 18px;
+	font-weight: bold;
+	margin-bottom: 12px;
+}
+
+.legend {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	font-size: 12px;
+	text-align: left;
+}
+
+/* Info Grid */
+.infoGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+}
+
+.infoCard {
+	background-color: #2c2c2e;
+	border-radius: 12px;
+	padding: 16px;
+	text-align: center;
+}
+
+.infoLabel {
+	font-size: 14px;
+	color: #8e8e93;
+	display: block;
+	margin-bottom: 4px;
+}
+
+.infoValue {
+	font-size: 18px;
+	font-weight: 600;
+	color: #ffcc00; /* Example highlight color */
+}
+
+/* Actions */
 .dialogActions {
-  display: flex;
-  margin-top: theme.$spacing-lg;
-  justify-content: flex-end;
-  gap: theme.$spacing-sm;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin-top: 16px;
 }
 
-.dialogButton {
-  all: unset;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: theme.$border-radius-md;
-  padding: theme.$spacing-sm theme.$spacing-md;
-  font-size: 0.95em;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color theme.$transition-fast, box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s;
-
-  &:hover, &:focus-visible {
-    box-shadow: 0 0 12px 2px #23863655, 0 1.5px 0 #23863633;
-    background: rgba(35, 134, 54, 0.07); // Subtle greenish glow background
-    border-color: #238636;
-    outline: none;
-  }
-
-  &:focus-visible {
-    outline: 2px solid #238636;
-    outline-offset: 2px;
-  }
+.primaryButton,
+.secondaryButton {
+	padding: 14px;
+	border-radius: 12px;
+	font-size: 17px;
+	font-weight: 600;
+	cursor: pointer;
+	border: none;
 }
 
-.dialogButtonPrimary {
-  composes: dialogButton;
-  background-color: theme.$accent-primary;
-  color: white;
-  transition: background-color theme.$transition-fast, box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s;
-
-  &:hover, &:focus-visible {
-    background-color: theme.$accent-primary-hover;
-    box-shadow: 0 0 12px 2px #23863699, 0 1.5px 0 #23863633;
-    border-color: #238636;
-    outline: none;
-  }
+.primaryButton {
+	background-color: #007aff;
+	color: white;
 }
 
-.dialogButtonSecondary {
-  composes: dialogButton;
-  background-color: theme.$bg-tertiary;
-  color: theme.$text-primary;
-  border: theme.$border-width-thin solid theme.$border-primary;
-  transition: background-color theme.$transition-fast, box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s;
-
-  &:hover, &:focus-visible {
-    background: rgba(35, 134, 54, 0.07);
-    box-shadow: 0 0 12px 2px #23863655, 0 1.5px 0 #23863633;
-    border-color: #238636;
-    outline: none;
-  }
+.secondaryButton {
+	background-color: transparent;
+	color: #007aff;
 }
 
+/* Close button */
 .dialogCloseButton {
-  all: unset;
-  font-family: inherit;
-  border-radius: theme.$border-radius-round;
-  height: 30px;
-  width: 30px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: theme.$text-secondary;
-  position: absolute;
-  top: theme.$spacing-md;
-  right: theme.$spacing-md;
-  cursor: pointer;
-  transition: background-color theme.$transition-fast, color theme.$transition-fast;
-
-  &:hover {
-    background-color: theme.$bg-tertiary;
-    color: theme.$text-primary;
-  }
-
-  &:focus-visible {
-    outline: 2px solid theme.$accent-primary;
-    outline-offset: 1px;
-    box-shadow: 0 0 0 2px theme.$bg-secondary, 0 0 0 4px theme.$accent-primary;
-  }
-
-  svg {
-    width: 20px;
-    height: 20px;
-  }
+	position: absolute;
+	top: 16px;
+	right: 16px;
+	background-color: rgba(99, 99, 102, 0.5);
+	border: none;
+	border-radius: 50%;
+	width: 30px;
+	height: 30px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #e5e5ea;
+	cursor: pointer;
 }
 
 @keyframes overlayShow {

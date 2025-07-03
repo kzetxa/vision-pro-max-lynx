@@ -12,7 +12,6 @@ import { getClientIdFromUrl } from "../lib/utils";
 
 const WorkoutPage: React.FC = observer(() => {
 	const { workoutId } = useParams<{ workoutId: string }>();
-
 	const { workoutPageStore } = useStore();
 
 	useEffect(() => {
@@ -20,11 +19,10 @@ const WorkoutPage: React.FC = observer(() => {
 			workoutPageStore.initializePage(workoutId);
 		} else {
 			workoutPageStore._setError("Workout ID is missing from URL.");
-			workoutPageStore._setLoading(false);
 		}
 	}, [workoutId, workoutPageStore]);
 
-	if (workoutPageStore.loading) {
+	if (workoutPageStore.loading || workoutPageStore.isSummaryLoading) {
 		return <p className={styles.statusMessage}>Loading workout...</p>;
 	}
 
@@ -32,7 +30,7 @@ const WorkoutPage: React.FC = observer(() => {
 		return <p className={styles.errorStatus}>Error: {workoutPageStore.error}</p>;
 	}
 
-	if (!workoutPageStore.workoutData) {
+	if (!workoutPageStore.workoutData && !workoutPageStore.workoutSummary) {
 		return <p className={styles.statusMessage}>Workout data could not be loaded.</p>;
 	}
 
@@ -40,30 +38,40 @@ const WorkoutPage: React.FC = observer(() => {
 
 	return (
 		<div className={styles.workoutPageContainer}>
-			<WorkoutHeader workoutData={workoutPageStore.workoutData} />
+			{workoutPageStore.workoutData && <WorkoutHeader workoutData={workoutPageStore.workoutData} />}
 			{clientId && <p className={styles.clientId}>Client ID: {clientId}</p>}
-			<ViewToggleButton 
-				isListView={workoutPageStore.isListView} 
-				onToggle={workoutPageStore.toggleListView} 
+			
+			{!workoutPageStore.workoutSummary && workoutPageStore.workoutData && (
+				<>
+					<ViewToggleButton 
+						isListView={workoutPageStore.isListView} 
+						onToggle={workoutPageStore.toggleListView} 
+					/>
+					{workoutPageStore.isListView ? (
+						<WorkoutBlockList 
+							allExerciseProgress={workoutPageStore.allExerciseProgress}
+							blocks={workoutPageStore.workoutData.blocks}
+							onToggleExerciseComplete={workoutPageStore.handleToggleExerciseCompleteList}
+						/>
+					) : (
+						<WorkoutBlockDetail 
+							blocks={workoutPageStore.workoutData.blocks}
+						/>
+					)}
+					<button
+						className={styles.finishButton}
+						onClick={workoutPageStore.handleFinishWorkout}
+					>
+						Finish Workout
+					</button>
+				</>
+			)}
+			
+			<FinishWorkoutDialog 
+				onOpenChange={(open) => open ? workoutPageStore.openFinishDialog() : workoutPageStore.closeFinishDialog()}
+				open={workoutPageStore.isFinishDialogOpen}
+				stats={workoutPageStore.workoutStats}
 			/>
-			<>
-				{workoutPageStore.isListView ? (
-					<WorkoutBlockList 
-						allExerciseProgress={workoutPageStore.allExerciseProgress}
-						blocks={workoutPageStore.workoutData.blocks}
-						onToggleExerciseComplete={workoutPageStore.handleToggleExerciseCompleteList}
-					/>
-				) : (
-					<WorkoutBlockDetail 
-						blocks={workoutPageStore.workoutData.blocks}
-					/>
-				)}
-				<FinishWorkoutDialog 
-					onConfirmFinish={workoutPageStore.handleFinishWorkout}
-					onOpenChange={(open) => open ? workoutPageStore.openFinishDialog() : workoutPageStore.closeFinishDialog()}
-					open={workoutPageStore.isFinishDialogOpen} 
-				/>
-			</>
 		</div>
 	);
 });

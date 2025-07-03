@@ -42,25 +42,49 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Example usage for workout progress
-export const upsertWorkoutProgress = async (progress: {
-	workoutId: string;
-	clientId: string;
-	exerciseId: string;
-	blockId: string;
-	status: "completed" | "incomplete"; // Example status
+// Inserts a new record to signify a completed workout with summary stats.
+export const saveWorkoutSummary = async (summary: {
+	workout_id: string;
+	client_id: string;
+	total_time_seconds: number;
+	total_sets_completed: number;
+	total_reps_completed: number;
+	total_sets_skipped: number;
 }): Promise<any> => {
 	const { data, error } = await supabase
-		.from("workout_progress") // Assuming a table named 'workout_progress'
-		.upsert(progress, {
-			onConflict: "workoutId,clientId,exerciseId,blockId", // Define your conflict resolution columns
+		.from("workout_progress") // The table now stores summary rows
+		.insert({
+			...summary,
+			completed_at: new Date().toISOString(), // Mark completion time
 		})
 		.select();
 
 	if (error) {
-		console.error("Error upserting workout progress:", error);
+		console.error("Error saving workout summary:", error);
 		throw error;
 	}
+	return data;
+};
+
+// Fetches the summary for a completed workout.
+export const getWorkoutSummary = async (
+	workout_id: string,
+	client_id: string
+): Promise<any | null> => {
+	const { data, error } = await supabase
+		.from("workout_progress")
+		.select("*")
+		.eq("workout_id", workout_id)
+		.eq("client_id", client_id)
+		// Assuming rows with a null exercise_id are summaries
+		.is("exercise_id", null)
+		.maybeSingle();
+
+	if (error) {
+		console.error("Error fetching workout summary:", error);
+		throw error;
+	}
+
 	return data;
 };
 
@@ -153,4 +177,4 @@ export const getOrGenerateAudio = async (exerciseId: string, text: string): Prom
 		console.error("An unexpected error occurred in getOrGenerateAudio:", err);
 		return null; // Or rethrow, or handle as appropriate
 	}
-}; 
+};

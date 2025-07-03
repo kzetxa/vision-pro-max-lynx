@@ -194,4 +194,14 @@ export type SupabasePopulatedWorkout = Omit<SupabaseWorkout, "block_1_id" | "blo
 export type SupabaseWorkoutPreview = Pick<SupabaseWorkout, "id" | "public_workout_title" | "header_image_url" | "focus_area" | "level" | "duration"> & {
    block1_public_name?: string | null; // Include block 1's public name if needed for display like before
    // Add other preview fields if necessary, e.g., image derived differently
-}; 
+};
+
+export interface WorkoutSummary {
+	workout_id: string;
+	client_id: string;
+	total_time_seconds: number;
+	total_sets_completed: number;
+	total_reps_completed: number;
+	total_sets_skipped: number;
+	completed_at?: string;
+} 

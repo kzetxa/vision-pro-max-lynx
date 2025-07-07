@@ -100,10 +100,10 @@ const FinishWorkoutDialog: React.FC<FinishWorkoutDialogProps> = ({ open, onOpenC
 					</div>
 
 					{/* TODO: when we are adding comments/community/discord, add this back */}
-					{/* <div className={styles.tabContainer}>
+					<div className={styles.tabContainer}>
 						<button className={`${styles.tabButton} ${styles.active}`}>Stats</button>
-						<button className={styles.tabButton}>Community</button>
-					</div> */}
+						<button className={styles.tabButton} disabled>Community</button>
+					</div>
 
 					<div className={styles.statsGrid}>
 						<StatCard label="Total Time" value={stats.totalTime} />

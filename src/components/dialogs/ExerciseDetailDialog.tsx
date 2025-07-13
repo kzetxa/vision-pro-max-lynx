@@ -43,6 +43,19 @@ const ExerciseDetailDialog: React.FC<ExerciseDetailDialogProps> = observer(() =>
 	const lastTouchTime = useRef<number>(0);
 	const lastTouchPosition = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
 
+	// Animation state for slide-up
+	const [animateState, setAnimateState] = useState<'pre' | 'in' | 'done'>('pre');
+	useEffect(() => {
+		// Next tick, trigger animation
+		const timeout = setTimeout(() => setAnimateState('in'), 10);
+		return () => clearTimeout(timeout);
+	}, []);
+
+	// Remove animation classes after animation ends
+	const handleAnimationEnd = () => {
+		if (animateState === 'in') setAnimateState('done');
+	};
+
 	// Call an expensive getter once
 	const details = blockExerciseId ? workoutPageStore.getFullExerciseDetailsForDialog(blockExerciseId) : null;
 
@@ -189,11 +202,20 @@ const ExerciseDetailDialog: React.FC<ExerciseDetailDialogProps> = observer(() =>
 		<div className={styles.dialogOverlay} onClick={() => dialogStore.popDialog()}>
 			<div 
 				ref={dialogRef}
-				className={`${styles.dialogContent} ${isDragging ? styles.dragging : ''} ${isMovingUp ? styles.movingUp : ''}`}
+				className={
+					[
+						styles.dialogContent,
+						isDragging ? styles.dragging : '',
+						isMovingUp ? styles.movingUp : '',
+						animateState === 'pre' ? styles.preAnimate : '',
+						animateState === 'in' ? styles.animateIn : '',
+					].filter(Boolean).join(' ')
+				}
 				style={{ transform }}
 				onClick={(e) => e.stopPropagation()}
 				onMouseDown={handleMouseDown}
 				onTouchStart={handleTouchStart}
+				onAnimationEnd={handleAnimationEnd}
 			>
 				<button
 					aria-label="Close dialog"

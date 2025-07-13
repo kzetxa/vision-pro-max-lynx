@@ -36,6 +36,11 @@
   box-shadow: 0 12px 32px rgba(255, 215, 0, 0.3);
 }
 
+.dialogContent.preAnimate {
+  transform: translateY(100vh) scale(0.98);
+  opacity: 0;
+}
+
 .closeButton {
   position: absolute;
   top: 12px;
@@ -191,4 +196,19 @@
 .audioPlayer {
   width: 100%;
   border-radius: 4px;
+} 
+
+@keyframes dialogSlideUp {
+  from {
+    transform: translateY(100vh) scale(0.98);
+    opacity: 0.2;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.dialogContent.animateIn {
+  animation: dialogSlideUp 0.32s cubic-bezier(0.33, 1, 0.68, 1);
 } 

@@ -23,10 +23,23 @@ const WorkoutBlockDetail: React.FC<WorkoutBlockDetailProps> = observer(({
 		return <p className={styles.statusMessage}>No blocks found for this workout.</p>;
 	}
 
+	// Calculate which blocks should be open (not completed)
+	const openBlockIds = blocks
+		.filter(block => {
+			const totalSets = block.block_exercises.reduce((max, ex) => Math.max(max, ex.sets || 1), 1);
+			const completedSetsForBlock = workoutPageStore.completedSets[block.id] || 0;
+			return completedSetsForBlock < totalSets; // Keep open if not all sets completed
+		})
+		.map(block => block.id);
+
 	return (
 		// Default type "single" allows one item open at a time. "multiple" allows several.
 		// collapsible allows all items to be closed.
-		<Accordion.Root className={styles.accordionRootContainer} type="multiple">
+		<Accordion.Root 
+			className={styles.accordionRootContainer} 
+			type="multiple"
+			value={openBlockIds}
+		>
 			{blocks.map((block) => {
 				const blockProgressPercent = workoutPageStore.calculateBlockProgress(block);
 				return (

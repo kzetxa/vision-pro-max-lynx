@@ -68,6 +68,7 @@
   cursor: pointer;
   margin-left: 1rem;
   transition: border-color 0.2s, background 0.2s;
+  position: relative;
 
   &:hover {
     border-color: #238636;
@@ -85,4 +86,11 @@
     width: 16px;
     height: 16px;
   }
+}
+
+.checkboxContainer {
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 } 

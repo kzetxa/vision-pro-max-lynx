@@ -68,6 +68,7 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 					</span>
 				)}
 			</div>
+			<div onClick={(e) => {e.stopPropagation(); onToggleComplete()}} className={styles.checkboxContainer}>
 			<Checkbox.Root
 				aria-label={`Mark ${exercise.current_name} as complete`}
 				checked={isComplete}
@@ -87,6 +88,7 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 					<CheckIcon />
 				</Checkbox.Indicator>
 			</Checkbox.Root>
+		</div>
 		</div>
 	);
 });

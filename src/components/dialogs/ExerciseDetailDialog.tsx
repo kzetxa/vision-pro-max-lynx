@@ -22,7 +22,18 @@ const ExerciseDetailDialog: React.FC<ExerciseDetailDialogProps> = observer(() =>
 	
 	const activeDialogProps = dialogStore.activeDialog?.props as ExerciseDetailDialogProps;
 	const blockExerciseId = activeDialogProps?.blockExerciseId;
-	const onToggleComplete = activeDialogProps?.onToggleComplete;
+
+	// Create a new onToggleComplete function that works with the current exercise
+	const onToggleComplete = useCallback(() => {
+		if (blockExerciseId) {
+			// Get the current block exercise
+			const currentBlockExercise = workoutPageStore.getBlockExerciseById(blockExerciseId);
+			if (currentBlockExercise) {
+				// Call the workout page store's toggle function directly with the current exercise
+				workoutPageStore.handleToggleExerciseCompleteList(blockExerciseId, currentBlockExercise);
+			}
+		}
+	}, [blockExerciseId, workoutPageStore]);
 
 	// Drag state
 	const [isDragging, setIsDragging] = useState(false);

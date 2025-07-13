@@ -133,10 +133,12 @@ interface AirtableIndividualBlockFields {
 	"special"?: string;
 	"Exercise Name"?: string[];
 	"Block name"?: string[]; // Corrected from "Block Name"
+	"auto_order"?: number;
 	[key: string]: any;
 }
 
 interface SupabaseIndividualBlock {
+	auto_order: number;
 	airtable_record_id: string;
 	block_overview_id?: string;
 	airtable_block_overview_record_id?: string;
@@ -389,7 +391,7 @@ async function syncIndividualBlocks(exerciseIdMap: Map<string, string>, blockOve
 
 	try {
 		await base('individual blocks').select({
-			fields: ["sets", "reps", "sets & reps", "unit", "special", "Exercise Name", "Block name"]
+			fields: ["sets", "reps", "sets & reps", "unit", "special", "Exercise Name", "Block name", "auto order"]
 		}).eachPage((pageRecords, fetchNextPage) => {
 			pageRecords.forEach(record => airtableRecords.push(record as any));
 			fetchNextPage();
@@ -398,7 +400,7 @@ async function syncIndividualBlocks(exerciseIdMap: Map<string, string>, blockOve
 		console.log(`Fetched ${airtableRecords.length} records from Airtable Individual Blocks.`);
 		if (airtableRecords.length === 0) return;
 
-		const supabaseIndividualBlocks: SupabaseIndividualBlock[] = airtableRecords.map(record => {
+		const supabaseIndividualBlocks: SupabaseIndividualBlock[] = airtableRecords.map((record, index) => {
 			const airtableExerciseId = record.fields["Exercise Name"]?.[0];
 			const airtableParentBlockOverviewId = record.fields["Block name"]?.[0];
 
@@ -423,13 +425,14 @@ async function syncIndividualBlocks(exerciseIdMap: Map<string, string>, blockOve
 				sets_and_reps_text: record.fields["sets & reps"],
 				unit: record.fields["unit"],
 				special_instructions: record.fields["special"],
+				auto_order: record.fields["auto order"]
 			};
 		});
 
 		const columns = [
 			'airtable_record_id', 'block_overview_id', 'airtable_block_overview_record_id',
 			'exercise_id', 'airtable_exercise_record_id', 'sets', 'reps',
-			'sets_and_reps_text', 'unit', 'special_instructions'
+			'sets_and_reps_text', 'unit', 'special_instructions', 'auto_order'
 		];
 		await upsertRecords('individual_blocks', supabaseIndividualBlocks, 'airtable_record_id', columns);
 

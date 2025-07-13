@@ -1,46 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Only use dotenv in Node.js environment
-const isNode = typeof process !== "undefined" && process.versions != null && process.versions.node != null;
-if (isNode) {
-	const dotenv = require("dotenv");
-	dotenv.config();
-}
+const supabaseUrl = "https://lpascrtwcrahykjkfqoo.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwYXNjcnR3Y3JhaHlramtmcW9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5NzQ0NDIsImV4cCI6MjA1OTU1MDQ0Mn0.jyqV34f68CbCaHH5ngmdF_PCFtT1VTEOsRimcXYbbk4";
 
-// --- DEVELOPMENT/LOCAL Environment Configuration ---
-// These are typically used when running local dev server or scripts like sync.ts
-const localSupabaseUrl = isNode ? process.env.VITE_LOCAL_SUPABASE_URL : import.meta.env.VITE_LOCAL_SUPABASE_URL;
-const localSupabaseAnonKey = isNode ? process.env.VITE_LOCAL_SUPABASE_ANON_KEY : import.meta.env.VITE_LOCAL_SUPABASE_ANON_KEY;
-
-// --- PRODUCTION/REMOTE Environment Configuration ---
-const remoteSupabaseUrl = isNode ? process.env.VITE_SUPABASE_URL : import.meta.env.VITE_SUPABASE_URL;
-const remoteSupabaseAnonKey = isNode ? process.env.VITE_SUPABASE_ANON_KEY : import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-// --- Logic to choose Supabase instance ---
-// Simple toggle: Set this to true to use local, false for remote.
-// For more sophisticated setups, you might use an environment variable like `USE_LOCAL_SUPABASE`
-let USE_LOCAL_SUPABASE_OVERRIDE = true; // <--- TOGGLE THIS FOR LOCAL/REMOTE
-USE_LOCAL_SUPABASE_OVERRIDE = false;
-
-let supabaseUrl: string | undefined;
-let supabaseAnonKey: string | undefined;
-
-if (USE_LOCAL_SUPABASE_OVERRIDE) {
-	console.log("Supabase client configured to use LOCAL instance (via override).");
-	supabaseUrl = localSupabaseUrl;
-	supabaseAnonKey = localSupabaseAnonKey;
-} else {
-	console.log("Supabase client configured to use REMOTE instance.");
-	supabaseUrl = remoteSupabaseUrl;
-	supabaseAnonKey = remoteSupabaseAnonKey;
-}
-
-if (!supabaseUrl || !supabaseAnonKey) {
-	throw new Error(`Supabase URL or Anon Key is missing. Check .env variables.
-		 Attempted to load: URL=${supabaseUrl}, Key Present=${!!supabaseAnonKey}`);
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey!);
 
 // Inserts a new record to signify a completed workout with summary stats.
 export const saveWorkoutSummary = async (summary: {

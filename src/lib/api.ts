@@ -62,14 +62,14 @@ export async function fetchWorkoutsForHome(
 		.from("workouts")
 		.select(
 			`
-      id,
-      public_workout_title,
-      header_image_url,
-      focus_area,
-      level,
-      duration,
-      block1:blocks_overview!block_1_id ( public_name ) 
-    `,
+	  id,
+	  public_workout_title,
+	  header_image_url,
+	  focus_area,
+	  level,
+	  duration,
+	  block1:blocks_overview!block_1_id ( public_name ) 
+	`,
 			{ count: "exact" },
 		); // Request total count for pagination logic
 
@@ -174,15 +174,16 @@ export async function fetchWorkoutDetailsById(workoutId: string): Promise<Supaba
 	const { data: individualBlocksData, error: individualBlockError } = await supabase
 		.from("individual_blocks")
 		.select(`
-            id,
-            sets,
-            reps,
-            sets_and_reps_text,
-            unit,
-            special_instructions,
-            block_overview_id,
-            exercise:exercise_library (*)
-        `)
+			id,
+			auto_order,
+			sets,
+			reps,
+			sets_and_reps_text,
+			unit,
+			special_instructions,
+			block_overview_id,
+			exercise:exercise_library (*)
+		`)
 		.in("block_overview_id", blockOverviewIds);
 
 	if (individualBlockError) {
@@ -195,6 +196,7 @@ export async function fetchWorkoutDetailsById(workoutId: string): Promise<Supaba
 		// Filter individual blocks belonging to this overview
 		const exercisesForThisBlock: SupabaseBlockExercise[] = (individualBlocksData || [])
 			.filter((ib) => ib.block_overview_id === overview.id)
+			.sort((a, b) => (a.auto_order) - (b.auto_order))
 			.map((ib: any) => ({ // Cast to any temporarily if types mismatch during build
 				id: ib.id,
 				block_overview_id: ib.block_overview_id,
@@ -205,7 +207,7 @@ export async function fetchWorkoutDetailsById(workoutId: string): Promise<Supaba
 				special_instructions: ib.special_instructions,
 				exercise: ib.exercise as SupabaseExercise | null, // Cast the joined exercise data
 			}));
-            
+
 		return {
 			...overview,
 			block_exercises: exercisesForThisBlock,

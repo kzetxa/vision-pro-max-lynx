@@ -1,4 +1,5 @@
 [build]
+  publish = "dist"
   # Directory containing the serverless functions
   functions = "api"
 
@@ -11,3 +12,8 @@
   functionsPort = 8888
   # Explicitly tell Netlify Dev the port your frontend framework (Vite) is running on
   targetPort = 5173
+
+  [[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

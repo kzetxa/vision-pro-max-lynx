@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { observer } from "mobx-react-lite";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import { useStore } from "../../contexts/StoreContext";
@@ -14,6 +14,7 @@ const composeText = (title: string, repsText: string, description: string) => {
 export interface ExerciseDetailDialogProps { 
   blockExerciseId?: string;
   exerciseId?: string;
+  onToggleComplete?: () => void;
 }
 
 const ExerciseDetailDialog: React.FC<ExerciseDetailDialogProps> = observer(() => {
@@ -21,6 +22,15 @@ const ExerciseDetailDialog: React.FC<ExerciseDetailDialogProps> = observer(() =>
 	
 	const activeDialogProps = dialogStore.activeDialog?.props as ExerciseDetailDialogProps;
 	const blockExerciseId = activeDialogProps?.blockExerciseId;
+	const onToggleComplete = activeDialogProps?.onToggleComplete;
+
+	// Drag state
+	const [isDragging, setIsDragging] = useState(false);
+	const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+	const dialogRef = useRef<HTMLDivElement>(null);
+	const lastTouchTime = useRef<number>(0);
+	const lastTouchPosition = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
 
 	// Call an expensive getter once
 	const details = blockExerciseId ? workoutPageStore.getFullExerciseDetailsForDialog(blockExerciseId) : null;
@@ -43,6 +53,108 @@ const ExerciseDetailDialog: React.FC<ExerciseDetailDialogProps> = observer(() =>
 		};
 	}, []);
 
+	// Handle drag start
+	const handleDragStart = useCallback((clientX: number, clientY: number) => {
+		setIsDragging(true);
+		setDragStart({ x: clientX, y: clientY });
+		setDragOffset({ x: 0, y: 0 });
+		lastTouchTime.current = Date.now();
+		lastTouchPosition.current = { x: clientX, y: clientY };
+	}, []);
+
+	// Handle drag move
+	const handleDragMove = useCallback((clientX: number, clientY: number) => {
+		if (!isDragging) return;
+		
+		const deltaX = clientX - dragStart.x;
+		const deltaY = clientY - dragStart.y;
+		setDragOffset({ x: deltaX, y: deltaY });
+	}, [isDragging, dragStart]);
+
+	// Handle drag end
+	const handleDragEnd = useCallback((_: number, clientY: number) => {
+		if (!isDragging) return;
+
+		const currentTime = Date.now();
+		const timeDelta = currentTime - lastTouchTime.current;
+		const deltaY = clientY - lastTouchPosition.current.y;
+
+		// Calculate velocity (pixels per millisecond)
+		const velocityY = timeDelta > 0 ? deltaY / timeDelta : 0;
+
+		// Check if flung upwards with sufficient velocity
+		const upwardVelocityThreshold = -0.5; // pixels per millisecond
+		if (velocityY < upwardVelocityThreshold && onToggleComplete && blockExerciseId) {
+			onToggleComplete();
+			
+			// Find the next exercise in the same block
+			const nextExercise = workoutPageStore.getNextExerciseInBlock(blockExerciseId);
+			if (nextExercise && nextExercise.exercise) {
+				// Open the next exercise dialog
+				dialogStore.pushDialog(ExerciseDetailDialog, {
+					blockExerciseId: nextExercise.id,
+					exerciseId: nextExercise.exercise.id,
+					onToggleComplete: onToggleComplete,
+				});
+			} else {
+				// No next exercise, just close the current dialog
+				dialogStore.popDialog();
+			}
+		}
+
+		// Reset drag state
+		setIsDragging(false);
+		setDragOffset({ x: 0, y: 0 });
+	}, [isDragging, onToggleComplete, dialogStore]);
+
+	// Mouse event handlers
+	const handleMouseDown = useCallback((e: React.MouseEvent) => {
+		e.preventDefault();
+		handleDragStart(e.clientX, e.clientY);
+	}, [handleDragStart]);
+
+	const handleMouseMove = useCallback((e: MouseEvent) => {
+		handleDragMove(e.clientX, e.clientY);
+	}, [handleDragMove]);
+
+	const handleMouseUp = useCallback((e: MouseEvent) => {
+		handleDragEnd(0, e.clientY);
+	}, [handleDragEnd]);
+
+	// Touch event handlers
+	const handleTouchStart = useCallback((e: React.TouchEvent) => {
+		const touch = e.touches[0];
+		handleDragStart(touch.clientX, touch.clientY);
+	}, [handleDragStart]);
+
+	const handleTouchMove = useCallback((e: TouchEvent) => {
+		e.preventDefault();
+		const touch = e.touches[0];
+		handleDragMove(touch.clientX, touch.clientY);
+	}, [handleDragMove]);
+
+	const handleTouchEnd = useCallback((e: TouchEvent) => {
+		const touch = e.changedTouches[0];
+		handleDragEnd(0, touch.clientY);
+	}, [handleDragEnd]);
+
+	// Add/remove global event listeners
+	useEffect(() => {
+		if (isDragging) {
+			document.addEventListener('mousemove', handleMouseMove);
+			document.addEventListener('mouseup', handleMouseUp);
+			document.addEventListener('touchmove', handleTouchMove, { passive: false });
+			document.addEventListener('touchend', handleTouchEnd);
+		}
+
+		return () => {
+			document.removeEventListener('mousemove', handleMouseMove);
+			document.removeEventListener('mouseup', handleMouseUp);
+			document.removeEventListener('touchmove', handleTouchMove);
+			document.removeEventListener('touchend', handleTouchEnd);
+		};
+	}, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+
 	if (!blockExerciseId) {
 		console.warn("ExerciseDetailDialog: blockExerciseId is missing from dialog props.");
 		return <div className={styles.dialogOverlay}><div className={styles.dialogContent}>Loading details...</div></div>; 
@@ -56,9 +168,20 @@ const ExerciseDetailDialog: React.FC<ExerciseDetailDialogProps> = observer(() =>
 	const { description } = details;
 	const { currentExerciseAudioUrl, isAudioLoading } = workoutPageStore;
 
+	// Calculate transform for dragging
+	const transform = `translate(${dragOffset.x}px, ${dragOffset.y}px)`;
+	const isMovingUp = dragOffset.y < -20; // Show visual feedback when moving up significantly
+
 	return (
 		<div className={styles.dialogOverlay} onClick={() => dialogStore.popDialog()}>
-			<div className={styles.dialogContent} onClick={(e) => e.stopPropagation()}>
+			<div 
+				ref={dialogRef}
+				className={`${styles.dialogContent} ${isDragging ? styles.dragging : ''} ${isMovingUp ? styles.movingUp : ''}`}
+				style={{ transform }}
+				onClick={(e) => e.stopPropagation()}
+				onMouseDown={handleMouseDown}
+				onTouchStart={handleTouchStart}
+			>
 				<button
 					aria-label="Close dialog"
 					className={styles.closeButton}

@@ -40,6 +40,7 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 			dialogStore.pushDialog(ExerciseDetailDialog, { 
 				blockExerciseId: blockExercise.id,
 				exerciseId: exercise.id,
+				onToggleComplete: onToggleComplete,
 			});
 		}
 	};

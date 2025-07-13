@@ -462,5 +462,27 @@ export class WorkoutPageStore {
 			isComplete: progress.isComplete,
 		};
 	}
+	// Get the next exercise in the same block
+	getNextExerciseInBlock(blockExerciseId: string): SupabaseBlockExercise | null {
+		if (!this.workoutData || !blockExerciseId) return null;
+
+		// Find the current block exercise
+		const currentBlockExercise = this.getBlockExerciseById(blockExerciseId);
+		if (!currentBlockExercise || !currentBlockExercise.block_overview_id) return null;
+
+		const blockId = currentBlockExercise.block_overview_id;
+		
+		// Find the block containing this exercise
+		const block = this.workoutData.blocks.find(b => b.id === blockId);
+		if (!block || !block.block_exercises) return null;
+
+		// Find the current exercise index in the block
+		const currentIndex = block.block_exercises.findIndex(be => be.id === blockExerciseId);
+		if (currentIndex === -1 || currentIndex === block.block_exercises.length - 1) return null;
+
+		// Return the next exercise
+		return block.block_exercises[currentIndex + 1];
+	}
+
 	// End of new getters
 } 

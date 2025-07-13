@@ -90,6 +90,8 @@ const ExerciseDetailDialog: React.FC<ExerciseDetailDialogProps> = observer(() =>
 			// Find the next exercise in the same block
 			const nextExercise = workoutPageStore.getNextExerciseInBlock(blockExerciseId);
 			if (nextExercise && nextExercise.exercise) {
+				// Close the current dialog first
+				dialogStore.popDialog();
 				// Open the next exercise dialog
 				dialogStore.pushDialog(ExerciseDetailDialog, {
 					blockExerciseId: nextExercise.id,

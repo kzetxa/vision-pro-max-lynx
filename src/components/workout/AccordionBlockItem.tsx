@@ -78,6 +78,7 @@ const AccordionBlockItem: React.FC<AccordionBlockItemProps> = observer(({
 	const { completedSets, exerciseCompletionInCurrentSet } = workoutPageStore;
 	const completedSetsForBlock = completedSets[block.id] || 0;
 	const totalSets = block.block_exercises.reduce((max, ex) => Math.max(max, ex.sets || 1), 1);
+	const currentSetForDisplay = Math.min(completedSetsForBlock + 1, totalSets);
 	
 	const completedExercisesCount = block.block_exercises.filter(be => exerciseCompletionInCurrentSet[be.id]).length;
 	const totalExercisesCount = block.block_exercises.length;
@@ -96,7 +97,7 @@ const AccordionBlockItem: React.FC<AccordionBlockItemProps> = observer(({
 						blockProgressPercent={blockProgressPercent}
 						completedExercisesCount={completedExercisesCount}
 						totalExercisesCount={totalExercisesCount}
-						currentSet={completedSetsForBlock + 1}
+						currentSet={currentSetForDisplay}
 						totalSets={totalSets}
 					/>
 				</Accordion.Trigger>

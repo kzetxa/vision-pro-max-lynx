@@ -208,52 +208,57 @@ export class WorkoutPageStore {
 		blockExerciseId: string,
 		exerciseDefinition: SupabaseBlockExercise,
 	): void => {
-		if (!this.currentWorkoutId || !getClientIdFromUrl()) return;
-
+		if (!this.currentWorkoutId) return;
+	
 		const blockId = exerciseDefinition.block_overview_id;
-		if (!blockId) {
-			console.error("Inconsistent data: block_overview_id is missing from exercise definition.");
-			return;
-		}
-
-		const newCompletionState = !this.exerciseCompletionInCurrentSet[blockExerciseId];
-		const newCompletions = {
-			...this.exerciseCompletionInCurrentSet,
-			[blockExerciseId]: newCompletionState,
-		};
-		this._setExerciseCompletionInCurrentSet(newCompletions);
-		saveWorkoutProgressToStorage(this.currentWorkoutId, { exerciseCompletionInCurrentSet: newCompletions });
-
+		if (!blockId) return;
+	
 		const block = this.workoutData?.blocks.find(b => b.id === blockId);
 		if (!block) return;
-
-		const allExercisesInBlockCompleteForSet = block.block_exercises.every(
-			ex => this.exerciseCompletionInCurrentSet[ex.id]
-		);
-
-		if (allExercisesInBlockCompleteForSet) {
+	
+		// 1. Update the completion status of the toggled exercise
+		const newCompletions = {
+			...this.exerciseCompletionInCurrentSet,
+			[blockExerciseId]: !this.exerciseCompletionInCurrentSet[blockExerciseId],
+		};
+		this._setExerciseCompletionInCurrentSet(newCompletions);
+	
+		// 2. Check if this action completes the current set
+		const setJustCompleted = block.block_exercises.every(ex => newCompletions[ex.id]);
+	
+		let newCompletedSets = this.completedSets;
+	
+		if (setJustCompleted) {
 			const totalSets = block.block_exercises.reduce((max, ex) => Math.max(max, ex.sets || 1), 1);
-			const currentCompletedSets = this.completedSets[blockId] || 0;
-
-			if (currentCompletedSets < totalSets) {
-				const newCompletedSetsCount = currentCompletedSets + 1;
-				const newCompletedSets = { ...this.completedSets, [blockId]: newCompletedSetsCount };
+			const previouslyCompletedSets = this.completedSets[blockId] || 0;
+	
+			if (previouslyCompletedSets < totalSets) {
+				const newCompletedSetsCount = previouslyCompletedSets + 1;
+				newCompletedSets = { ...this.completedSets, [blockId]: newCompletedSetsCount };
 				this._setCompletedSets(newCompletedSets);
-				
-				// Reset exercise completion for the block for the next set
-				const newCompletionsAfterReset = { ...this.exerciseCompletionInCurrentSet };
-				block.block_exercises.forEach(ex => {
-					newCompletionsAfterReset[ex.id] = false;
-				});
-				this._setExerciseCompletionInCurrentSet(newCompletionsAfterReset);
-
-				// Save both changes to storage
-				saveWorkoutProgressToStorage(this.currentWorkoutId, {
-					completedSets: newCompletedSets,
-					exerciseCompletionInCurrentSet: newCompletionsAfterReset
-				});
+	
+				// 3. If there's another set to do, reset the checkboxes for the block
+				if (newCompletedSetsCount < totalSets) {
+					const completionsForNextSet = { ...newCompletions };
+					block.block_exercises.forEach(ex => {
+						completionsForNextSet[ex.id] = false;
+					});
+					this._setExerciseCompletionInCurrentSet(completionsForNextSet);
+					// Save and exit
+					saveWorkoutProgressToStorage(this.currentWorkoutId, {
+						completedSets: newCompletedSets,
+						exerciseCompletionInCurrentSet: completionsForNextSet,
+					});
+					return;
+				}
 			}
 		}
+		
+		// 4. Default save for toggling an exercise or completing the final set
+		saveWorkoutProgressToStorage(this.currentWorkoutId, {
+			completedSets: newCompletedSets,
+			exerciseCompletionInCurrentSet: newCompletions,
+		});
 	};
 
 	get workoutStats() {

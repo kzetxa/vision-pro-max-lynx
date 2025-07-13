@@ -1,6 +1,6 @@
-import React from "react";
+import { Cross2Icon, HeartIcon, UploadIcon } from "@radix-ui/react-icons";
 import * as RadixDialog from "@radix-ui/react-dialog";
-import { Cross2Icon, UploadIcon, HeartIcon } from "@radix-ui/react-icons";
+import React from "react";
 import styles from "./FinishWorkoutDialog.module.scss";
 
 // Placeholder data - we will replace this with real props later
@@ -30,18 +30,18 @@ const StatCard: React.FC<{ label: string; value: string | number }> = ({ label, 
 );
 
 // A placeholder for the donut chart
-const DonutChartPlaceholder: React.FC<{ data: any[] }> = ({ data }) => (
-	<div className={styles.donutChartPlaceholder}>
-		<div className={styles.chartText}>Donut Chart (WIP)</div>
-		<ul className={styles.legend}>
-			{data.map((item) => (
-				<li key={item.name}>
-					{item.name}: {item.value}%
-				</li>
-			))}
-		</ul>
-	</div>
-);
+// const DonutChartPlaceholder: React.FC<{ data: { name: string; value: number }[] }> = ({ data }) => (
+// 	<div className={styles.donutChartPlaceholder}>
+// 		<div className={styles.chartText}>Donut Chart (WIP)</div>
+// 		<ul className={styles.legend}>
+// 			{data.map((item) => (
+// 				<li key={item.name}>
+// 					{item.name}: {item.value}%
+// 				</li>
+// 			))}
+// 		</ul>
+// 	</div>
+// );
 
 const InfoCard: React.FC<{ label: string; value: string }> = ({ label, value }) => (
 	<div className={styles.infoCard}>

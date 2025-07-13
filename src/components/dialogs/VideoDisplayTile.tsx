@@ -1,9 +1,8 @@
-import React from "react";
-import { StarIcon, PlayIcon } from "@radix-ui/react-icons";
-import { IconButton } from "@radix-ui/themes";
-import styles from "./ExerciseFeedbackDialog.module.scss";
-import { SmartIcon } from "../SmartIcon";
+import { PlayIcon, StarIcon } from "@radix-ui/react-icons";
 import clsx from "clsx";
+import React from "react";
+import { SmartIcon } from "../SmartIcon";
+import styles from "./ExerciseFeedbackDialog.module.scss";
 import VideoThumbnail from "./VideoThumbnail";
 import VideoTimestamp from "./VideoTimestamp";
 

@@ -28,7 +28,6 @@ interface ExerciseTileProps {
 const ExerciseTile: React.FC<ExerciseTileProps> = ({ 
 	blockExercise, 
 	workoutId, 
-	clientId, 
 	initialProgress, 
 	onExerciseComplete, 
 }) => {
@@ -63,11 +62,11 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({
 		// Don't save initial default state before any interaction potentially happens
 		// Or, alternatively, load progress in WorkoutPage and only pass it down if it exists
 		// For simplicity now, we save whenever these change after initial load.
-		if (workoutId && clientId && blockExerciseId) {
+		if (workoutId && blockExerciseId) {
 			const progress: ExerciseProgress = { currentSet, isExerciseDone };
-			saveExerciseProgressToStorage(workoutId, clientId, blockExerciseId, progress);
+			saveExerciseProgressToStorage(workoutId, blockExerciseId, progress);
 		}
-	}, [currentSet, isExerciseDone, workoutId, clientId, blockExerciseId]);
+	}, [currentSet, isExerciseDone, workoutId, blockExerciseId]);
 
 	if (!exercise) {
 		// Handle case where exercise data might be missing (though unlikely with the current query)

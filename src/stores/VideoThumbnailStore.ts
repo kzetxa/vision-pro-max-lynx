@@ -1,4 +1,4 @@
-import { makeObservable, observable, action, runInAction, reaction, IReactionDisposer } from "mobx";
+import { makeObservable, observable, action, reaction, IReactionDisposer } from "mobx";
 
 export type ThumbnailStatus = "idle" | "loading" | "loaded" | "processing" | "error";
 

@@ -20,7 +20,6 @@ const BlockViewer: React.FC<BlockViewerProps> = ({
 	block, 
 	blockNumber, 
 	workoutId, 
-	clientId, 
 	exerciseProgressMap,
 	onExerciseComplete,
 }) => {
@@ -46,7 +45,6 @@ const BlockViewer: React.FC<BlockViewerProps> = ({
 				exercises.map((blockExercise: SupabaseBlockExercise) => (
 					<ExerciseTile 
 						blockExercise={blockExercise} 
-						clientId={clientId}   // Pass down 
 						initialProgress={exerciseProgressMap[blockExercise.id]}
 						key={blockExercise.id}
 						onExerciseComplete={onExerciseComplete} // Pass down callback

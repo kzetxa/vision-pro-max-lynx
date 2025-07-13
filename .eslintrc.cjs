@@ -54,6 +54,8 @@ module.exports = {
 
     // Common rules -------------------------------------------------------------------------------
 
+    "no-unused-vars": ["error", { "vars": "all", "args": "none", "ignoreRestSiblings": false }],
+
     "prefer-const": ["error"],
 
     "indent": [2, "tab", {

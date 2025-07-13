@@ -1,5 +1,7 @@
 import { SupabaseExercise } from "./types";
 
+const TEST_CLIENT_ID = "b3b8c7e2-8e2a-4c2a-9b2e-2b2e2b2e2b2e"
+
 /**
  * Attempts to extract the first URL from a string that might be
  * a JSON array containing a single URL string (e.g., '["http://example.com"]' ).
@@ -125,18 +127,7 @@ export function getClientIdFromUrl(): string {
 		return idFromUrl;
 	}
 	console.warn("clientId not found in URL query parameters. Using default test ID.");
-	return "test-client-id";
-}
-
-// Hardcoded UUID for development/testing
-const HARDCODED_CLIENT_ID = "b3b8c7e2-8e2a-4c2a-9b2e-2b2e2b2e2b2e";
-
-export function ensureClientIdInUrl(): void {
-	const url = new URL(window.location.href);
-	if (!url.searchParams.get("clientId")) {
-		url.searchParams.set("clientId", HARDCODED_CLIENT_ID);
-		window.location.replace(url.toString());
-	}
+	return TEST_CLIENT_ID;
 }
 
 /**

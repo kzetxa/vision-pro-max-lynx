@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, HTMLAttributes } from "react";
 import { observer } from "mobx-react-lite";
-import { VideoThumbnailStore, ThumbnailStatus } from "../../stores/VideoThumbnailStore"; // Import the new store
+import React, { HTMLAttributes, useEffect, useMemo } from "react";
+import { VideoThumbnailStore } from "../../stores/VideoThumbnailStore"; // Import the new store
 
 interface VimeoThumbnailProps extends HTMLAttributes<HTMLDivElement> {
 	videoId: string;

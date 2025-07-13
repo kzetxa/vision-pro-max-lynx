@@ -1,4 +1,4 @@
-import { action, computed, makeObservable, observable } from "mobx";
+import { action, makeObservable, observable } from "mobx";
 import React from "react"; // Needed for React.FC type
 import type { RootStore } from "./RootStore";
 

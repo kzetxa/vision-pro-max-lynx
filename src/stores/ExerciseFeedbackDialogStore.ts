@@ -1,4 +1,4 @@
-import { makeObservable, observable, action, runInAction, computed } from "mobx";
+import { makeObservable, observable, action, runInAction } from "mobx";
 import type { SupabaseExercise } from "../lib/types";
 import { supabase, upsertUserVideoUpload } from "../lib/supabase";
 import { getClientIdFromUrl, extractVimeoId } from "../lib/utils";

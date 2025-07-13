@@ -29,8 +29,8 @@ const ExerciseDetailDialog: React.FC<ExerciseDetailDialogProps> = observer(() =>
 			// Get the current block exercise
 			const currentBlockExercise = workoutPageStore.getBlockExerciseById(blockExerciseId);
 			if (currentBlockExercise) {
-				// Call the workout page store's toggle function directly with the current exercise
-				workoutPageStore.handleToggleExerciseCompleteList(blockExerciseId, currentBlockExercise);
+				// Always mark as complete
+				workoutPageStore.markExerciseComplete(blockExerciseId, currentBlockExercise);
 			}
 		}
 	}, [blockExerciseId, workoutPageStore]);

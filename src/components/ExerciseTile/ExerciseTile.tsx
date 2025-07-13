@@ -18,7 +18,6 @@ interface ExerciseTileProps {
   // exercise: Exercise; // Old Airtable Type
   blockExercise: SupabaseBlockExercise; // New Supabase Type
   workoutId: string; // Added
-  clientId: string;  // Added
   initialProgress?: ExerciseProgress; // Added optional initial progress
   // onCompletionChange?: (exerciseId: string, setId: string | number, completed: boolean) => void; // Will need update for Supabase IDs
   // Add a callback for when the entire exercise is completed

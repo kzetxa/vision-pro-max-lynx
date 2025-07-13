@@ -5,7 +5,6 @@ import {
 	loadWorkoutProgressFromStorage,
 	clearWorkoutProgressInStorage,
 	saveWorkoutProgressToStorage,
-	type WorkoutProgressStorage,
 } from "../lib/localStorage";
 import {
 	parseSetsAndReps,

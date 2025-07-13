@@ -49,7 +49,6 @@ const WorkoutPage: React.FC = observer(() => {
 					/>
 					{workoutPageStore.isListView ? (
 						<WorkoutBlockList 
-							allExerciseProgress={workoutPageStore.allExerciseProgress}
 							blocks={workoutPageStore.workoutData.blocks}
 							onToggleExerciseComplete={workoutPageStore.handleToggleExerciseCompleteList}
 						/>

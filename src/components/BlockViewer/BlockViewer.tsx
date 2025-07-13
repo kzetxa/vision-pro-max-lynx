@@ -1,38 +1,27 @@
 import React from "react";
-// import type { PopulatedBlock } from '../lib/types'; // Old Airtable Type
-import type { ExerciseProgress } from "../../lib/localStorage"; // Import ExerciseProgress type
+import { observer } from "mobx-react-lite";
 import type { SupabaseBlockExercise, SupabasePopulatedBlock } from "../../lib/types"; // New Supabase Types
-import Badge from "../Badge/Badge"; // Import Badge component
-import styles from "./BlockViewer.module.scss"; // Import styles
+import Badge from "../Badge/Badge";
+import styles from "./BlockViewer.module.scss";
 import ExerciseTile from "../ExerciseTile/ExerciseTile";
+import { useStore } from "../../contexts/StoreContext";
 
 interface BlockViewerProps {
-  // block: PopulatedBlock; // Old Airtable Type
-  block: SupabasePopulatedBlock; // New Supabase Type
-  blockNumber: number; // Keep block number for display
-  workoutId: string; // Added workoutId
-  clientId: string;  // Added clientId
-  exerciseProgressMap: {[blockExerciseId: string]: ExerciseProgress}; // Added progress map
-  onExerciseComplete: (blockExerciseId: string) => void; // Added callback
+  block: SupabasePopulatedBlock;
+  blockNumber: number;
+  onExerciseComplete: (blockExerciseId: string, exerciseDefinition: SupabaseBlockExercise) => void;
 }
 
-const BlockViewer: React.FC<BlockViewerProps> = ({ 
-	block, 
-	blockNumber, 
-	workoutId, 
-	exerciseProgressMap,
+const BlockViewer: React.FC<BlockViewerProps> = observer(({
+	block,
+	blockNumber,
 	onExerciseComplete,
 }) => {
-	// Use Supabase field names
+	const { workoutPageStore } = useStore();
 	const blockName = block.public_name || `Block ${blockNumber}`;
-	// const setsAndReps = block.fields["Sets & Reps"]; // Old Airtable access
-	// Note: Sets/Reps info is now per-exercise in SupabaseIndividualBlock
 	const rest = block.rest_between_sets;
 	const intensity = block.intensity;
-	// const equipment = block.fields["Equipment"]?.join(', '); // Old Airtable access
-	// Note: Equipment info is likely on SupabaseExercise now -> block.block_exercises[n].exercise.equipment_public_name
-  
-	const exercises = block.block_exercises; // Use the array from SupabasePopulatedBlock
+	const exercises = block.block_exercises;
 
 	return (
 		<div className={styles.blockContainer}>
@@ -42,20 +31,22 @@ const BlockViewer: React.FC<BlockViewerProps> = ({
 				{rest && <Badge label="Rest:" value={rest} />}
 			</div>
 			{exercises && exercises.length > 0 ? (
-				exercises.map((blockExercise: SupabaseBlockExercise) => (
-					<ExerciseTile 
-						blockExercise={blockExercise} 
-						initialProgress={exerciseProgressMap[blockExercise.id]}
-						key={blockExercise.id}
-						onExerciseComplete={onExerciseComplete} // Pass down callback
-						workoutId={workoutId} // Pass down 
-					/>
-				))
+				exercises.map((blockExercise: SupabaseBlockExercise) => {
+					const isComplete = !!workoutPageStore.exerciseCompletionInCurrentSet[blockExercise.id];
+					return (
+						<ExerciseTile 
+							blockExercise={blockExercise} 
+							isComplete={isComplete}
+							key={blockExercise.id}
+							onExerciseComplete={() => onExerciseComplete(blockExercise.id, blockExercise)}
+						/>
+					);
+				})
 			) : (
 				<p className={styles.statusMessage}>No exercises found in this block.</p>
 			)}
 		</div>
 	);
-};
+});
 
 export default BlockViewer; 

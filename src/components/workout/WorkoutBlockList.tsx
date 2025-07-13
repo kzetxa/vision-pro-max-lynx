@@ -1,21 +1,21 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
-import type { SupabasePopulatedBlock, SupabaseBlockExercise } from "../../lib/types"; // Adjust path
-import type { ExerciseProgress } from "../../lib/localStorage"; // Adjust path
+import type { SupabasePopulatedBlock, SupabaseBlockExercise } from "../../lib/types";
 import ExerciseListItem from "./ExerciseListItem";
-import styles from "./WorkoutBlockList.module.scss"; // Use new styles
+import styles from "./WorkoutBlockList.module.scss";
+import { useStore } from "../../contexts/StoreContext";
 
 interface WorkoutBlockListProps {
     blocks: SupabasePopulatedBlock[];
-    allExerciseProgress: { [blockExerciseId: string]: ExerciseProgress };
     onToggleExerciseComplete: (blockExerciseId: string, exerciseDefinition: SupabaseBlockExercise) => void;
 }
 
 const WorkoutBlockList: React.FC<WorkoutBlockListProps> = observer(({ 
 	blocks,
-	allExerciseProgress,
 	onToggleExerciseComplete, 
 }) => {
+	const { workoutPageStore } = useStore();
+
 	if (!blocks || blocks.length === 0) {
 		return <p className={styles.statusMessage}>No blocks found for this workout.</p>;
 	}
@@ -32,7 +32,7 @@ const WorkoutBlockList: React.FC<WorkoutBlockListProps> = observer(({
 					</h4>
 					{block.block_exercises && block.block_exercises.length > 0 ? (
 						block.block_exercises.map((be) => {
-							const isExerciseComplete = !!allExerciseProgress[be.id]?.isExerciseDone;
+							const isExerciseComplete = !!workoutPageStore.exerciseCompletionInCurrentSet[be.id];
 							return (
 								<ExerciseListItem
 									blockExercise={be}

@@ -9,9 +9,9 @@ interface RequestBody {
 }
 
 const storeVoice = async (buffer: Buffer, filename: string, text: string, exerciseId: string, supabase: SupabaseClient): Promise<string> => {
-	const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-	const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-	const region = process.env.AWS_REGION || 'us-west-2';
+	const accessKeyId = process.env.STEPHEN_AWS_ACCESS_KEY_ID;
+	const secretAccessKey = process.env.STEPHEN_AWS_SECRET_ACCESS_KEY;
+	const region = process.env.STEPHEN_AWS_REGION || 'us-west-2';
 	if (!accessKeyId || !secretAccessKey) {
 		throw new Error('AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY is not set');
 	}
@@ -19,8 +19,8 @@ const storeVoice = async (buffer: Buffer, filename: string, text: string, exerci
 	const s3 = new S3Client({ 
 		region: 'us-west-2',
 		credentials: {
-			accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-			secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+			accessKeyId: process.env.STEPHEN_AWS_ACCESS_KEY_ID!,
+			secretAccessKey: process.env.STEPHEN_AWS_SECRET_ACCESS_KEY!,
 		}
 	});
 

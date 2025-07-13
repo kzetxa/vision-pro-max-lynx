@@ -175,7 +175,7 @@ export interface SupabaseWorkout {
 // --- Structured Types for Frontend Use ---
 
 // Represents an exercise within a block, fetched from Supabase
-export type SupabaseBlockExercise = Pick<SupabaseIndividualBlock, "id" | "sets" | "reps" | "sets_and_reps_text" | "unit" | "special_instructions"> & {
+export type SupabaseBlockExercise = Pick<SupabaseIndividualBlock, "id" | "block_overview_id" | "sets" | "reps" | "sets_and_reps_text" | "unit" | "special_instructions"> & {
   exercise: SupabaseExercise | null; // The joined exercise details
 };
 

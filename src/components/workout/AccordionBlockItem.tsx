@@ -4,16 +4,14 @@ import * as Accordion from "@radix-ui/react-accordion";
 import * as Progress from "@radix-ui/react-progress";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 import type { SupabasePopulatedBlock, SupabaseBlockExercise } from "../../lib/types";
-import type { ExerciseProgress } from "../../lib/localStorage";
 import AccordionExerciseRow from "./AccordionExerciseRow";
-import styles from "./AccordionBlockItem.module.scss"; // Changed import
+import styles from "./AccordionBlockItem.module.scss";
+import { useStore } from "../../contexts/StoreContext";
 
 interface AccordionBlockItemProps {
 	block: SupabasePopulatedBlock;
 	blockProgressPercent: number;
-	allExerciseProgress: { [blockExerciseId: string]: ExerciseProgress };
 	onToggleExerciseComplete: (blockExerciseId: string, exerciseDefinition: SupabaseBlockExercise) => void;
-	// Props for store access if specific calculations are better done here, or pass pre-calculated values
 }
 
 // Sub-component for the left part of the trigger
@@ -44,7 +42,9 @@ const TriggerRightContent: React.FC<{
 	blockProgressPercent: number;
 	completedExercisesCount: number;
 	totalExercisesCount: number;
-}> = ({ blockProgressPercent, completedExercisesCount, totalExercisesCount }) => {
+	currentSet: number;
+	totalSets: number;
+}> = ({ blockProgressPercent, completedExercisesCount, totalExercisesCount, currentSet, totalSets }) => {
 	return (
 		<div className={styles.triggerRight}>
 			<div className={styles.accordionProgressContainer}>
@@ -58,7 +58,7 @@ const TriggerRightContent: React.FC<{
 					/>
 				</Progress.Root>
 				<span className={styles.progressText}>
-					{completedExercisesCount}/{totalExercisesCount}
+					{`Set ${currentSet}/${totalSets} (${completedExercisesCount}/${totalExercisesCount})`}
 				</span>
 			</div>
 			<ChevronDownIcon aria-hidden className={styles.accordionChevron} />
@@ -69,12 +69,17 @@ const TriggerRightContent: React.FC<{
 const AccordionBlockItem: React.FC<AccordionBlockItemProps> = observer(({
 	block,
 	blockProgressPercent,
-	allExerciseProgress,
 	onToggleExerciseComplete,
 }) => {
+	const { workoutPageStore } = useStore();
 	const intensityText = block.intensity || "";
 	const restText = block.rest_between_sets || "";
-	const completedExercisesCount = Math.round(block.block_exercises.filter((be: SupabaseBlockExercise) => allExerciseProgress[be.id]?.isExerciseDone).length);
+
+	const { completedSets, exerciseCompletionInCurrentSet } = workoutPageStore;
+	const completedSetsForBlock = completedSets[block.id] || 0;
+	const totalSets = block.block_exercises.reduce((max, ex) => Math.max(max, ex.sets || 1), 1);
+	
+	const completedExercisesCount = block.block_exercises.filter(be => exerciseCompletionInCurrentSet[be.id]).length;
 	const totalExercisesCount = block.block_exercises.length;
 
 	return (
@@ -91,6 +96,8 @@ const AccordionBlockItem: React.FC<AccordionBlockItemProps> = observer(({
 						blockProgressPercent={blockProgressPercent}
 						completedExercisesCount={completedExercisesCount}
 						totalExercisesCount={totalExercisesCount}
+						currentSet={completedSetsForBlock + 1}
+						totalSets={totalSets}
 					/>
 				</Accordion.Trigger>
 			</Accordion.Header>
@@ -98,7 +105,7 @@ const AccordionBlockItem: React.FC<AccordionBlockItemProps> = observer(({
 				{block.block_exercises && block.block_exercises.length > 0 ? (
 					block.block_exercises.map((be: SupabaseBlockExercise) => {
 						if (!be.exercise || !be.exercise.current_name) return null;
-						const isExerciseComplete = !!allExerciseProgress[be.id]?.isExerciseDone;
+						const isExerciseComplete = !!workoutPageStore.exerciseCompletionInCurrentSet[be.id];
 						return (
 							<AccordionExerciseRow 
 								blockExercise={be}

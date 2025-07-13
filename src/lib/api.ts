@@ -197,6 +197,7 @@ export async function fetchWorkoutDetailsById(workoutId: string): Promise<Supaba
 			.filter((ib) => ib.block_overview_id === overview.id)
 			.map((ib: any) => ({ // Cast to any temporarily if types mismatch during build
 				id: ib.id,
+				block_overview_id: ib.block_overview_id,
 				sets: ib.sets,
 				reps: ib.reps,
 				sets_and_reps_text: ib.sets_and_reps_text,

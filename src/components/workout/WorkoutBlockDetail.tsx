@@ -31,7 +31,6 @@ const WorkoutBlockDetail: React.FC<WorkoutBlockDetailProps> = observer(({
 				const blockProgressPercent = workoutPageStore.calculateBlockProgress(block);
 				return (
 					<AccordionBlockItem 
-						allExerciseProgress={workoutPageStore.allExerciseProgress} // Pass from store
 						block={block}
 						blockProgressPercent={blockProgressPercent}
 						key={block.id}

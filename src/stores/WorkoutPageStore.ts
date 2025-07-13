@@ -4,8 +4,8 @@ import type { SupabasePopulatedWorkout, SupabaseBlockExercise, SupabasePopulated
 import {
 	loadWorkoutProgressFromStorage,
 	clearWorkoutProgressInStorage,
-	saveExerciseProgressToStorage,
-	type ExerciseProgress,
+	saveWorkoutProgressToStorage,
+	type WorkoutProgressStorage,
 } from "../lib/localStorage";
 import {
 	parseSetsAndReps,
@@ -23,7 +23,8 @@ export class WorkoutPageStore {
 	error: string | null = null;
 	isListView: boolean = false;
 	isFinishDialogOpen: boolean = false;
-	allExerciseProgress: {[blockExerciseId: string]: ExerciseProgress} = {};
+	completedSets: { [blockId: string]: number } = {};
+	exerciseCompletionInCurrentSet: { [blockExerciseId:string]: boolean } = {};
 	currentExerciseAudioUrl: string | null = null;
 	isAudioLoading: boolean = false;
 	workoutSummary: WorkoutSummary | null = null;
@@ -41,7 +42,8 @@ export class WorkoutPageStore {
 			error: observable,
 			isListView: observable,
 			isFinishDialogOpen: observable,
-			allExerciseProgress: observable.deep,
+			completedSets: observable.deep,
+			exerciseCompletionInCurrentSet: observable.deep,
 			currentExerciseAudioUrl: observable,
 			isAudioLoading: observable,
 			workoutSummary: observable,
@@ -61,7 +63,8 @@ export class WorkoutPageStore {
 			_setWorkoutData: action,
 			_setLoading: action,
 			_setError: action,
-			_setAllExerciseProgress: action,
+			_setCompletedSets: action,
+			_setExerciseCompletionInCurrentSet: action,
 			_clearError: action,
 			_setCurrentExerciseAudioUrl: action,
 			_setAudioLoading: action,
@@ -88,8 +91,11 @@ export class WorkoutPageStore {
 	_clearError(): void {
 		this.error = null;
 	}
-	_setAllExerciseProgress(progress: {[blockExerciseId: string]: ExerciseProgress}): void {
-		this.allExerciseProgress = progress;
+	_setCompletedSets(completedSets: { [blockId: string]: number }): void {
+		this.completedSets = completedSets;
+	}
+	_setExerciseCompletionInCurrentSet(completion: { [exerciseId: string]: boolean }): void {
+		this.exerciseCompletionInCurrentSet = completion;
 	}
 	_setCurrentExerciseAudioUrl(url: string | null): void {
 		this.currentExerciseAudioUrl = url;
@@ -107,16 +113,27 @@ export class WorkoutPageStore {
 	// Method to calculate block completion progress
 	calculateBlockProgress = (block: SupabasePopulatedBlock): number => {
 		if (!block.block_exercises || block.block_exercises.length === 0) {
-			return 0; // Or 100 if an empty block is considered complete
+			return 100;
 		}
-		const totalExercises = block.block_exercises.length;
-		let completedExercises = 0;
-		for (const be of block.block_exercises) {
-			if (this.allExerciseProgress[be.id]?.isExerciseDone) {
-				completedExercises++;
+
+		const totalSets = block.block_exercises.reduce((max, ex) => Math.max(max, ex.sets || 1), 1);
+		if (totalSets === 0) return 100;
+
+		const completedSetsForBlock = this.completedSets[block.id] || 0;
+
+		let exercisesCompletedInCurrentSet = 0;
+		if (completedSetsForBlock < totalSets) {
+			for (const be of block.block_exercises) {
+				if (this.exerciseCompletionInCurrentSet[be.id]) {
+					exercisesCompletedInCurrentSet++;
+				}
 			}
 		}
-		return totalExercises > 0 ? (completedExercises / totalExercises) * 100 : 0;
+
+		const progressInCurrentSet = block.block_exercises.length > 0 ? (exercisesCompletedInCurrentSet / block.block_exercises.length) : 0;
+		const totalProgress = (completedSetsForBlock + progressInCurrentSet) / totalSets;
+
+		return Math.min(totalProgress * 100, 100);
 	};
 
 	async initializePage(workoutId: string): Promise<void> {
@@ -138,7 +155,8 @@ export class WorkoutPageStore {
 				if (data) {
 					this._setWorkoutData(data);
 					const progress = loadWorkoutProgressFromStorage(workoutId);
-					this._setAllExerciseProgress(progress);
+					this._setCompletedSets(progress.completedSets);
+					this._setExerciseCompletionInCurrentSet(progress.exerciseCompletionInCurrentSet);
 				} else {
 					this._setError("Workout not found.");
 					this._setWorkoutData(null); // Clear stale data
@@ -192,27 +210,50 @@ export class WorkoutPageStore {
 	): void => {
 		if (!this.currentWorkoutId || !getClientIdFromUrl()) return;
 
-		const existingProgress = this.allExerciseProgress[blockExerciseId];
-		const isCurrentlyComplete = !!existingProgress?.isExerciseDone;
-		const newCompletionState = !isCurrentlyComplete;
+		const blockId = exerciseDefinition.block_overview_id;
+		if (!blockId) {
+			console.error("Inconsistent data: block_overview_id is missing from exercise definition.");
+			return;
+		}
 
-		const totalSets = typeof exerciseDefinition.sets === "number" && exerciseDefinition.sets > 0
-			? exerciseDefinition.sets
-			: 1;
-
-		const updatedProgress: ExerciseProgress = {
-			currentSet: newCompletionState ? totalSets : 0,
-			isExerciseDone: newCompletionState,
+		const newCompletionState = !this.exerciseCompletionInCurrentSet[blockExerciseId];
+		const newCompletions = {
+			...this.exerciseCompletionInCurrentSet,
+			[blockExerciseId]: newCompletionState,
 		};
+		this._setExerciseCompletionInCurrentSet(newCompletions);
+		saveWorkoutProgressToStorage(this.currentWorkoutId, { exerciseCompletionInCurrentSet: newCompletions });
 
-		// Create a new object for the progress map to ensure MobX picks up the change
-		const newAllProgress = {
-			...this.allExerciseProgress,
-			[blockExerciseId]: updatedProgress,
-		};
-		this._setAllExerciseProgress(newAllProgress);
+		const block = this.workoutData?.blocks.find(b => b.id === blockId);
+		if (!block) return;
 
-		saveExerciseProgressToStorage(this.currentWorkoutId, blockExerciseId, updatedProgress);
+		const allExercisesInBlockCompleteForSet = block.block_exercises.every(
+			ex => this.exerciseCompletionInCurrentSet[ex.id]
+		);
+
+		if (allExercisesInBlockCompleteForSet) {
+			const totalSets = block.block_exercises.reduce((max, ex) => Math.max(max, ex.sets || 1), 1);
+			const currentCompletedSets = this.completedSets[blockId] || 0;
+
+			if (currentCompletedSets < totalSets) {
+				const newCompletedSetsCount = currentCompletedSets + 1;
+				const newCompletedSets = { ...this.completedSets, [blockId]: newCompletedSetsCount };
+				this._setCompletedSets(newCompletedSets);
+				
+				// Reset exercise completion for the block for the next set
+				const newCompletionsAfterReset = { ...this.exerciseCompletionInCurrentSet };
+				block.block_exercises.forEach(ex => {
+					newCompletionsAfterReset[ex.id] = false;
+				});
+				this._setExerciseCompletionInCurrentSet(newCompletionsAfterReset);
+
+				// Save both changes to storage
+				saveWorkoutProgressToStorage(this.currentWorkoutId, {
+					completedSets: newCompletedSets,
+					exerciseCompletionInCurrentSet: newCompletionsAfterReset
+				});
+			}
+		}
 	};
 
 	get workoutStats() {
@@ -232,16 +273,15 @@ export class WorkoutPageStore {
 		let setsSkipped = 0;
 		
 		this.workoutData.blocks.forEach(block => {
+			const totalSetsInBlock = block.block_exercises.reduce((max, ex) => Math.max(max, ex.sets || 1), 1);
+			const completedSetsForBlock = this.completedSets[block.id] || 0;
+			
+			setsCompleted += completedSetsForBlock;
+			setsSkipped += totalSetsInBlock - completedSetsForBlock;
+
 			block.block_exercises.forEach(be => {
-				const progress = this.allExerciseProgress[be.id];
-				const { sets, reps } = parseSetsAndReps(be);
-				
-				if (progress?.isExerciseDone) {
-					setsCompleted += sets;
-					repsCompleted += sets * reps;
-				} else {
-					setsSkipped += sets;
-				}
+				const { reps } = parseSetsAndReps(be);
+				repsCompleted += completedSetsForBlock * reps;
 			});
 		});
 
@@ -313,11 +353,11 @@ export class WorkoutPageStore {
 	// Start of new getters
 
 	get getBlockExerciseById() {
-		return (blockExerciseId: string): SupabaseBlockExercise | undefined => {
-			if (!this.workoutData) return undefined;
+		return (blockExerciseId: string | null | undefined): SupabaseBlockExercise | undefined => {
+			if (!this.workoutData || !blockExerciseId) return undefined;
 			for (const block of this.workoutData.blocks) {
-				const foundBe = block.block_exercises.find((be) => be.id === blockExerciseId);
-				if (foundBe) return foundBe;
+				const found = block.block_exercises.find(be => be.id === blockExerciseId);
+				if (found) return found;
 			}
 			return undefined;
 		};
@@ -326,15 +366,13 @@ export class WorkoutPageStore {
 	// This getter assumes SupabaseBlockExercise has a nested 'exercise' property of type SupabaseExercise.
 	// If not, and only exercise_id is available, this would need to search a flat list of exercises.
 	get getExerciseById() {
-		return (exerciseId: string): SupabaseExercise | undefined => {
-			if (!this.workoutData) return undefined;
+		return (exerciseId: string | null | undefined): SupabaseExercise | undefined => {
+			if (!this.workoutData || !exerciseId) return undefined;
 			for (const block of this.workoutData.blocks) {
 				for (const be of block.block_exercises) {
-					// Assuming be.exercise is the SupabaseExercise object or be.exercise_id exists
-					if (be.exercise && be.exercise.id === exerciseId) {
+					if (be.exercise?.id === exerciseId) {
 						return be.exercise;
 					}
-					// If only be.exercise_id is present, this won't work directly without a flat list
 				}
 			}
 			return undefined;
@@ -342,9 +380,21 @@ export class WorkoutPageStore {
 	}
 
 	get getExerciseProgressState() {
-		return (blockExerciseId: string): { isComplete: boolean } => {
-			const progress = this.allExerciseProgress[blockExerciseId];
-			return { isComplete: !!progress?.isExerciseDone };
+		return (blockExerciseId: string): { isComplete: boolean; currentSet: number; totalSets: number } => {
+			const blockExercise = this.getBlockExerciseById(blockExerciseId);
+			if (!blockExercise || !blockExercise.block_overview_id) {
+				return { isComplete: false, currentSet: 0, totalSets: 1 };
+			}
+			
+			const blockId = blockExercise.block_overview_id;
+			const totalSets = blockExercise.sets || 1;
+			const completedSets = this.completedSets[blockId] || 0;
+
+			return {
+				isComplete: this.exerciseCompletionInCurrentSet[blockExerciseId] || false,
+				currentSet: completedSets + 1,
+				totalSets,
+			};
 		};
 	}
 
@@ -364,11 +414,10 @@ export class WorkoutPageStore {
 		if (!blockExerciseId) return null;
 
 		const blockExercise = this.getBlockExerciseById(blockExerciseId);
-		if (!blockExercise || !blockExercise.exercise) return null; // Ensure exercise is populated
-		const exercise = blockExercise.exercise; // Assuming exercise is nested
-
-		const exerciseName = exercise.current_name || "Unnamed Exercise";
-		const vimeoCode = exercise.vimeo_code;
+		const exercise = blockExercise?.exercise;
+		const progress = this.getExerciseProgressState(blockExerciseId);
+		
+		if (!exercise || !blockExercise) return null;
 
 		const parsedRepsInfo = parseSetsAndReps(blockExercise);
 		let repsText = "";
@@ -384,7 +433,7 @@ export class WorkoutPageStore {
 		} else if (blockExercise.sets_and_reps_text) {
 			repsText = blockExercise.sets_and_reps_text;
 		}
-
+		
 		const description = [
 			exercise.explanation_1,
 			exercise.explanation_2,
@@ -392,22 +441,21 @@ export class WorkoutPageStore {
 			exercise.explanation_4,
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(" ") || 'No description available.';
 
 		const exerciseType = getDisplayableArrayString(exercise.over_sort_category);
 		const equipmentNeeded = getDisplayableArrayString(exercise.equipment_public_name);
-		const { isComplete } = this.getExerciseProgressState(blockExerciseId);
 
 		return {
 			exercise,
 			blockExercise,
-			exerciseName,
-			vimeoCode,
+			exerciseName: exercise.current_name || "Unnamed Exercise",
+			vimeoCode: exercise.vimeo_code,
 			repsText,
 			description,
 			exerciseType,
 			equipmentNeeded,
-			isComplete,
+			isComplete: progress.isComplete,
 		};
 	}
 	// End of new getters

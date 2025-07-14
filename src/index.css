@@ -1,5 +1,14 @@
 @import "./styles/theme.module.scss";
 
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  margin-block-start: 0;
+  margin-block-end: 0;
+  margin-inline-start: 0;
+  margin-inline-end: 0;
+}
+
+
 :root {
   /* Re-declare primary font from theme.module.scss for global access if needed */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -77,14 +86,6 @@ a {
 a:hover, a:focus {
   color: var(--accent-primary-hover-css);
   outline: none; 
-}
-
-/* Minimal global heading styling - can be overridden by modules */
-h1, h2, h3, h4, h5, h6 {
-  color: var(--text-headings-css);
-  margin-top: 1em;
-  margin-bottom: 0.6em;
-  line-height: 1.3;
 }
 
 /* Remove .glassmorphic as it's no longer used globally */

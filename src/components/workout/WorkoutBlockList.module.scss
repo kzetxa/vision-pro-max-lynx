@@ -7,9 +7,9 @@
 
 .listViewBlock {
     // Styling for each block containing a title and then a list of exercises
-    padding: 16px;
+    padding: 0;
     margin-bottom: 12px;
-    background-color: #161b22; // Slightly lighter than container, but still dark
+    background-color: rgb(42, 42, 42);
     border-radius: 6px;
     border: 1px solid #30363d;
 
@@ -21,8 +21,11 @@
 .listViewBlockTitle {
     font-size: 1.2em; // Larger title
     font-weight: 600;
+    background-color: rgb(34, 34, 34);
     color: #e6edf3;   // Brighter text for titles
-    margin-bottom: 12px; // Space between title and exercises list
+    padding-bottom: 12px; // Space between title and exercises list
+    padding: 16px;
+    border-bottom: 1px solid #21262d;
 }
 
 .itemRow { 

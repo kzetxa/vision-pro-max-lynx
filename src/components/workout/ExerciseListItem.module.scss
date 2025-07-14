@@ -34,24 +34,28 @@
 }
 
 .checkboxRoot {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-    border: 1px solid #8b949e; // Border for checkbox
-    background-color: #0D1117; // Dark background for checkbox
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid #8b949e;
+    background-color: #0D1117;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    margin-left: 12px; // Space between reps text (or label) and checkbox
+    margin-left: 1rem;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+    padding: 10px;
 
     &:hover {
-        border-color: #c9d1d9;
+        border-color: #1a6429;
     }
 
     &[data-state='checked'] {
-        background-color: #238636; // Green when checked, similar to GitHub's scheme
-        border-color: #238636;
+        background-color: transparent;
+        border-color: rgb(255 215 0);
+        border-width: 2px;
     }
 }
 

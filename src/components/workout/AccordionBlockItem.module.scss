@@ -3,13 +3,14 @@
 .accordionItem {
 	backdrop-filter: blur(12px) saturate(180%);
 	-webkit-backdrop-filter: blur(12px) saturate(180%);
-	background-color: rgba(17, 25, 40, 0.85);
+	background-color: rgba(34, 34, 34);
 	border-radius: 8px;       // Rounded corners for the item
 	margin-bottom: 0.5rem;    // Space between accordion items
 	overflow: hidden;         // Ensures content respects border-radius
 }
 
 .accordionHeader {
+	display: block;
 }
 
 .accordionTrigger {
@@ -23,13 +24,6 @@
 	color: #fff;
 	cursor: pointer;
 	text-align: left;
-	transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s;
-
-	&:hover, &:focus {
-		background: rgba(35, 134, 54, 0.07); // Subtle greenish glow background
-		box-shadow: 0 0 12px 2px #23863655, 0 1.5px 0 #23863633;
-		color: #e6edf3;
-	}
 
 	&[data-state='open'] {
 		.accordionChevron {

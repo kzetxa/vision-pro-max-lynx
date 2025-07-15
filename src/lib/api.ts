@@ -181,6 +181,7 @@ export async function fetchWorkoutDetailsById(workoutId: string): Promise<Supaba
 			sets_and_reps_text,
 			unit,
 			special_instructions,
+			special_set,
 			block_overview_id,
 			exercise:exercise_library (*)
 		`)
@@ -205,6 +206,7 @@ export async function fetchWorkoutDetailsById(workoutId: string): Promise<Supaba
 				sets_and_reps_text: ib.sets_and_reps_text,
 				unit: ib.unit,
 				special_instructions: ib.special_instructions,
+				special_set: ib.special_set,
 				exercise: ib.exercise as SupabaseExercise | null, // Cast the joined exercise data
 			}));
 

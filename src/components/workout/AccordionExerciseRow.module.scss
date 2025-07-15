@@ -96,3 +96,24 @@
   align-items: center;
   justify-content: center;
 } 
+
+.specialContainer {
+  display: flex;
+  gap: 8px;
+}
+
+.specialInstructions {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.specialSet {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.separator {
+  width: 1px;
+  height: 55px;
+  background-color: rgb(255 215 0);;
+}

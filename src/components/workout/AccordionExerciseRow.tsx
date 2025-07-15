@@ -14,17 +14,17 @@ interface AccordionExerciseRowProps {
 	onToggleComplete: () => void;
 }
 
-const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({ 
+const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 	blockExercise,
 	isComplete,
-	onToggleComplete, 
+	onToggleComplete,
 }) => {
 	const { dialogStore } = useStore();
 	const exercise = blockExercise.exercise;
 
 	if (!exercise || !exercise.current_name) {
 		console.warn("Skipping accordion exercise row due to missing details:", blockExercise);
-		return null; 
+		return null;
 	}
 
 	const parsedRepsInfo = parseSetsAndReps(blockExercise);
@@ -37,7 +37,7 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 
 	const handleRowClick = () => {
 		if (exercise) {
-			dialogStore.pushDialog(ExerciseDetailDialog, { 
+			dialogStore.pushDialog(ExerciseDetailDialog, {
 				blockExerciseId: blockExercise.id,
 				exerciseId: exercise.id,
 				onToggleComplete: onToggleComplete,
@@ -46,7 +46,7 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 	};
 
 	return (
-		<div 
+		<div
 			className={styles.accordionExerciseRow}
 			onClick={handleRowClick}
 		>
@@ -63,33 +63,40 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 			</div>
 			<div style={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
 				<span className={styles.exerciseTitle}>{exercise.current_name}</span>
+				{parsedRepsInfo.sets > 1 && <span className={styles.exerciseRepsSupportingText}>x {parsedRepsInfo.sets} sets</span>}
+			</div>
+			<div className={styles.specialContainer}>
+				{blockExercise.special_instructions && <span className={styles.specialInstructions}>{blockExercise.special_instructions}</span>}
+				{blockExercise.special_instructions && blockExercise.special_set && <div className={styles.separator} />}
+				{blockExercise.special_set && <span className={styles.specialSet}>{blockExercise.special_set}</span>}
+				{(blockExercise.special_instructions || blockExercise.special_set) && <div className={styles.separator} />}
 				{repsText && (
 					<span className={styles.exerciseRepsSupportingText}>
 						{repsText}
 					</span>
 				)}
 			</div>
-			<div onClick={(e) => {e.stopPropagation(); onToggleComplete()}} className={styles.checkboxContainer}>
-			<Checkbox.Root
-				aria-label={`Mark ${exercise.current_name} as complete`}
-				checked={isComplete}
-				className={styles.checkboxRoot}
-				onCheckedChange={onToggleComplete}
-				onClick={(e) => {
-					e.stopPropagation();
-				}}
-				onKeyDown={(e) => { 
-					if (e.key === " ") {
+			<div onClick={(e) => { e.stopPropagation(); onToggleComplete() }} className={styles.checkboxContainer}>
+				<Checkbox.Root
+					aria-label={`Mark ${exercise.current_name} as complete`}
+					checked={isComplete}
+					className={styles.checkboxRoot}
+					onCheckedChange={onToggleComplete}
+					onClick={(e) => {
 						e.stopPropagation();
-						onToggleComplete();
-					}
-				}}
-			>
-				<Checkbox.Indicator className={styles.checkboxIndicator}>
-					<CheckIcon />
-				</Checkbox.Indicator>
-			</Checkbox.Root>
-		</div>
+					}}
+					onKeyDown={(e) => {
+						if (e.key === " ") {
+							e.stopPropagation();
+							onToggleComplete();
+						}
+					}}
+				>
+					<Checkbox.Indicator className={styles.checkboxIndicator}>
+						<CheckIcon />
+					</Checkbox.Indicator>
+				</Checkbox.Root>
+			</div>
 		</div>
 	);
 });

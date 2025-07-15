@@ -391,7 +391,7 @@ async function syncIndividualBlocks(exerciseIdMap: Map<string, string>, blockOve
 
 	try {
 		await base('individual blocks').select({
-			fields: ["sets", "reps", "sets & reps", "unit", "special", "Exercise Name", "Block name", "auto order"]
+			fields: ["sets", "reps", "sets & reps", "unit", "special", "Special Set", "Exercise Name", "Block name", "auto order"]
 		}).eachPage((pageRecords, fetchNextPage) => {
 			pageRecords.forEach(record => airtableRecords.push(record as any));
 			fetchNextPage();
@@ -425,6 +425,7 @@ async function syncIndividualBlocks(exerciseIdMap: Map<string, string>, blockOve
 				sets_and_reps_text: record.fields["sets & reps"],
 				unit: record.fields["unit"],
 				special_instructions: record.fields["special"],
+				special_set: record.fields["Special Set"],
 				auto_order: record.fields["auto order"]
 			};
 		});

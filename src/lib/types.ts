@@ -145,6 +145,7 @@ export interface SupabaseIndividualBlock {
   sets_and_reps_text?: string | null;
   unit?: string | null;
   special_instructions?: string | null;
+  special_set?: string | null;
    // Add other relevant fields from your Supabase individual_blocks table
   created_at?: string; 
 }
@@ -175,7 +176,7 @@ export interface SupabaseWorkout {
 // --- Structured Types for Frontend Use ---
 
 // Represents an exercise within a block, fetched from Supabase
-export type SupabaseBlockExercise = Pick<SupabaseIndividualBlock, "id" | "block_overview_id" | "sets" | "reps" | "sets_and_reps_text" | "unit" | "special_instructions"> & {
+export type SupabaseBlockExercise = Pick<SupabaseIndividualBlock, "id" | "block_overview_id" | "sets" | "reps" | "sets_and_reps_text" | "unit" | "special_instructions" | "special_set"> & {
   exercise: SupabaseExercise | null; // The joined exercise details
 };
 

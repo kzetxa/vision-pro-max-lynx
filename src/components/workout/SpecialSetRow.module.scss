@@ -1,0 +1,75 @@
+.specialSetRow {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  margin: 4px 0;
+  border-bottom: 1px solid #30363d;
+  border-radius: 8px;
+  background: transparent;
+  color: #c9d1d9;
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.leadingIndicator {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+}
+
+.greenBullet {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #238636;
+}
+
+.content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.titleContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title {
+  font-size: 1em;
+  font-weight: 500;
+  color: #e6edf3;
+}
+
+.infoIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #8b949e;
+  color: #0D1117;
+  font-size: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #6e7681;
+  }
+
+  svg {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+.roundsCounter {
+  color: #8b949e;
+  font-size: 0.9em;
+  margin-left: auto;
+} 

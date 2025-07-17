@@ -21,6 +21,19 @@
   }
 }
 
+.leadingIndicator {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+}
+
+.greenBullet {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #238636;
+}
+
 .imageContainer {
   width: 60px;
   height: 60px;
@@ -115,5 +128,5 @@
 .separator {
   width: 1px;
   height: 55px;
-  background-color: rgb(255 215 0);;
+  background-color: rgb(47, 43, 21);
 }

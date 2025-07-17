@@ -31,6 +31,17 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 	let repsText = "";
 	if (parsedRepsInfo.reps > 0 && (!blockExercise.unit || blockExercise.unit.toLowerCase().includes("rep") || blockExercise.unit.trim() === "")) {
 		repsText = `${parsedRepsInfo.reps} reps`;
+		// Add side information if present in sets_and_reps_text
+		if (blockExercise.sets_and_reps_text) {
+			const text = blockExercise.sets_and_reps_text.toLowerCase();
+			if (text.includes("right side")) {
+				repsText += " Right Side";
+			} else if (text.includes("left side")) {
+				repsText += " Left Side";
+			} else if (text.includes("each side")) {
+				repsText += " each side";
+			}
+		}
 	} else if (blockExercise.sets_and_reps_text) {
 		repsText = blockExercise.sets_and_reps_text;
 	}
@@ -50,6 +61,11 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 			className={styles.accordionExerciseRow}
 			onClick={handleRowClick}
 		>
+			{blockExercise.special_set && (
+				<div className={styles.leadingIndicator}>
+					<div className={styles.greenBullet} />
+				</div>
+			)}
 			<div className={styles.imageContainer}>
 				{exercise.thumbnail ? (
 					<img
@@ -67,9 +83,7 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 			</div>
 			<div className={styles.specialContainer}>
 				{blockExercise.special_instructions && <span className={styles.specialInstructions}>{blockExercise.special_instructions}</span>}
-				{blockExercise.special_instructions && blockExercise.special_set && <div className={styles.separator} />}
-				{blockExercise.special_set && <span className={styles.specialSet}>{blockExercise.special_set}</span>}
-				{(blockExercise.special_instructions || blockExercise.special_set) && <div className={styles.separator} />}
+				{blockExercise.special_instructions && repsText && <div className={styles.separator} />}
 				{repsText && (
 					<span className={styles.exerciseRepsSupportingText}>
 						{repsText}

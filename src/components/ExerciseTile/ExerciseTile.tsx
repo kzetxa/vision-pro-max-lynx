@@ -36,7 +36,22 @@ const ExerciseTile: React.FC<ExerciseTileProps> = ({
 	const vimeoCode = exercise.vimeo_code;
 	const explanation1 = exercise.explanation_1;
   
-	const setsRepsTextForDisplay = blockExercise.sets_and_reps_text;
+	// Generate reps text with side information
+	let setsRepsTextForDisplay = blockExercise.sets_and_reps_text;
+	if (parsedRepCount > 0 && (!blockExercise.unit || blockExercise.unit.toLowerCase().includes("rep") || blockExercise.unit.trim() === "")) {
+		setsRepsTextForDisplay = `${parsedRepCount} reps`;
+		// Add side information if present in sets_and_reps_text
+		if (blockExercise.sets_and_reps_text) {
+			const text = blockExercise.sets_and_reps_text.toLowerCase();
+			if (text.includes("right side")) {
+				setsRepsTextForDisplay += " Right Side";
+			} else if (text.includes("left side")) {
+				setsRepsTextForDisplay += " Left Side";
+			} else if (text.includes("each side")) {
+				setsRepsTextForDisplay += " each side";
+			}
+		}
+	}
 	const unit = blockExercise.unit;
 	const specialInstructions = blockExercise.special_instructions;
 	const typeDisplay = getDisplayableArrayString(exercise.over_sort_category);

@@ -29,6 +29,17 @@ const ExerciseListItem: React.FC<ExerciseListItemProps> = observer(({
 	let repsText = "";
 	if (parsedRepsInfo.reps > 0 && (!blockExercise.unit || blockExercise.unit.toLowerCase().includes("rep") || blockExercise.unit.trim() === "")) {
 		repsText = `${parsedRepsInfo.reps} reps`;
+		// Add side information if present in sets_and_reps_text
+		if (blockExercise.sets_and_reps_text) {
+			const text = blockExercise.sets_and_reps_text.toLowerCase();
+			if (text.includes("right side")) {
+				repsText += " Right Side";
+			} else if (text.includes("left side")) {
+				repsText += " Left Side";
+			} else if (text.includes("each side")) {
+				repsText += " each side";
+			}
+		}
 	} else if (blockExercise.sets_and_reps_text) {
 		repsText = blockExercise.sets_and_reps_text;
 	}

@@ -69,20 +69,20 @@ const TriggerRightContent: React.FC<{
 
 const AccordionBlockItem: React.FC<AccordionBlockItemProps> = observer(({
 	block,
-	blockProgressPercent,
+	// blockProgressPercent,
 	onToggleExerciseComplete,
 }) => {
 	const { workoutPageStore } = useStore();
 	const intensityText = block.intensity || "";
 	const restText = block.rest_between_sets || "";
 
-	const { completedSets, exerciseCompletionInCurrentSet } = workoutPageStore;
-	const completedSetsForBlock = completedSets[block.id] || 0;
-	const totalSets = block.block_exercises.reduce((max, ex) => Math.max(max, ex.sets || 1), 1);
-	const currentSetForDisplay = Math.min(completedSetsForBlock + 1, totalSets);
+	// const { completedSets, exerciseCompletionInCurrentSet } = workoutPageStore;
+	// const completedSetsForBlock = completedSets[block.id] || 0;
+	// const totalSets = block.block_exercises.reduce((max, ex) => Math.max(max, ex.sets || 1), 1);
+	// const currentSetForDisplay = Math.min(completedSetsForBlock + 1, totalSets);
 	
-	const completedExercisesCount = block.block_exercises.filter(be => exerciseCompletionInCurrentSet[be.id]).length;
-	const totalExercisesCount = block.block_exercises.length;
+	// const completedExercisesCount = block.block_exercises.filter(be => exerciseCompletionInCurrentSet[be.id]).length;
+	// const totalExercisesCount = block.block_exercises.length;
 
 	return (
 		<Accordion.Item className={styles.accordionItem} value={block.id}>
@@ -94,13 +94,13 @@ const AccordionBlockItem: React.FC<AccordionBlockItemProps> = observer(({
 						publicName={block.public_name}
 						restText={restText}
 					/>
-					<TriggerRightContent 
+					{/* <TriggerRightContent 
 						blockProgressPercent={blockProgressPercent}
 						completedExercisesCount={completedExercisesCount}
 						totalExercisesCount={totalExercisesCount}
 						currentSet={currentSetForDisplay}
 						totalSets={totalSets}
-					/>
+					/> */}
 				</Accordion.Trigger>
 			</Accordion.Header>
 			<Accordion.Content className={styles.accordionContent}>
@@ -108,9 +108,21 @@ const AccordionBlockItem: React.FC<AccordionBlockItemProps> = observer(({
 					(() => {
 						const renderedItems: React.ReactNode[] = [];
 						let currentSpecialSet: string | null = null;
+						// let halfSplitSetStart = false;
+						// let halfSplitSetEnd = false;
 						
 						block.block_exercises.forEach((be: SupabaseBlockExercise, index: number) => {
 							if (!be.exercise || !be.exercise.current_name) return;
+
+							// const specialSetIncludesSplit = be.special_set?.toLowerCase().includes("split");
+
+							// if (specialSetIncludesSplit && !halfSplitSetStart) {
+							// 	halfSplitSetStart = true;
+							// }
+
+							// if (!specialSetIncludesSplit && halfSplitSetStart && !halfSplitSetEnd) {
+							// 	halfSplitSetEnd = true;
+							// }
 							
 							// Check if we need to show a special set row
 							if (be.special_set && be.special_set !== currentSpecialSet) {

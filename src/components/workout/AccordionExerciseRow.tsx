@@ -40,7 +40,7 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 		// Handle Half Split Set side display
 		if (blockExercise.special_set && blockExercise.special_set.toLowerCase().includes("half split set")) {
 			const currentSet = getCurrentSetForSpecialSet(blockExercise.special_set);
-			if (currentSet === 1) {
+			if (currentSet === 0) {
 				repsText += " Left Side";
 			} else {
 				repsText += " Right Side";
@@ -73,7 +73,9 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 	return (
 		<div
 			className={styles.accordionExerciseRow}
-			onClick={handleRowClick}
+			// disable if exercise is complete
+			style={{ opacity: isComplete ? 0.5 : 1 }}
+			onClick={isComplete ? undefined : handleRowClick}
 		>
 			{blockExercise.special_set && (
 				<div className={styles.leadingIndicator}>

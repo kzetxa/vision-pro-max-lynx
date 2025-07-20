@@ -108,9 +108,7 @@ const ExerciseDetailDialog: React.FC<ExerciseDetailDialogProps> = observer(() =>
 
 		// Check if flung upwards with sufficient velocity
 		const upwardVelocityThreshold = -0.5; // pixels per millisecond
-		if (velocityY < upwardVelocityThreshold && onToggleComplete && blockExerciseId) {
-			onToggleComplete();
-			
+		if (velocityY < upwardVelocityThreshold && blockExerciseId) {
 			// Find the next exercise in the same block
 			const nextExercise = workoutPageStore.getNextExerciseInBlock(blockExerciseId);
 			if (nextExercise && nextExercise.exercise) {
@@ -126,6 +124,8 @@ const ExerciseDetailDialog: React.FC<ExerciseDetailDialogProps> = observer(() =>
 				// No next exercise, just close the current dialog
 				dialogStore.popDialog();
 			}
+
+			onToggleComplete();
 		}
 
 		// Reset drag state

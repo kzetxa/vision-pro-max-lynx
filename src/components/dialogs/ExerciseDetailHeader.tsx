@@ -68,7 +68,9 @@ const ExerciseDetailHeader: React.FC<ExerciseDetailHeaderProps> = observer(() =>
 				</div>
 				{repsText && <p className={styles.repsText}>{repsText}</p>}
 			</div>
-			<Checkbox.Root
+			Swipe up to complete
+			{/* TODO: Add back in when we have a way to toggle completion */}
+			{/* <Checkbox.Root
 				aria-label={`Mark ${exerciseName} as complete`}
 				checked={isComplete}
 				className={styles.completionCheckboxRoot}
@@ -78,7 +80,7 @@ const ExerciseDetailHeader: React.FC<ExerciseDetailHeaderProps> = observer(() =>
 				<Checkbox.Indicator className={styles.completionCheckboxIndicator}>
 					<CheckIcon />
 				</Checkbox.Indicator>
-			</Checkbox.Root>
+			</Checkbox.Root> */}
 		</div>
 	);
 });

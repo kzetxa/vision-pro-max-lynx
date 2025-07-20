@@ -28,7 +28,8 @@ const WorkoutBlockDetail: React.FC<WorkoutBlockDetailProps> = observer(({
 		.filter(block => {
 			const totalSets = block.block_exercises.reduce((max, ex) => Math.max(max, ex.sets || 1), 1);
 			const completedSetsForBlock = workoutPageStore.completedSets[block.id] || 0;
-			return completedSetsForBlock < totalSets; // Keep open if not all sets completed
+			// return completedSetsForBlock < totalSets; // Keep open if not all sets completed
+			return true; // TODO: Remove this (keep all blocks open for now)
 		})
 		.map(block => block.id);
 

@@ -108,21 +108,9 @@ const AccordionBlockItem: React.FC<AccordionBlockItemProps> = observer(({
 					(() => {
 						const renderedItems: React.ReactNode[] = [];
 						let currentSpecialSet: string | null = null;
-						// let halfSplitSetStart = false;
-						// let halfSplitSetEnd = false;
-						
+
 						block.block_exercises.forEach((be: SupabaseBlockExercise, index: number) => {
 							if (!be.exercise || !be.exercise.current_name) return;
-
-							// const specialSetIncludesSplit = be.special_set?.toLowerCase().includes("split");
-
-							// if (specialSetIncludesSplit && !halfSplitSetStart) {
-							// 	halfSplitSetStart = true;
-							// }
-
-							// if (!specialSetIncludesSplit && halfSplitSetStart && !halfSplitSetEnd) {
-							// 	halfSplitSetEnd = true;
-							// }
 							
 							// Check if we need to show a special set row
 							if (be.special_set && be.special_set !== currentSpecialSet) {

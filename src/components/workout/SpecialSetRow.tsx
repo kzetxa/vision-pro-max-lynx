@@ -31,87 +31,31 @@ const SpecialSetRow: React.FC<SpecialSetRowProps> = observer(({
 
 			if (allCompleted) {
 				// Show completed state for current round
-				const roundIndex = workoutPageStore.specialSetCurrentRoundIndex[specialSetName] || 0;
+				const currentSet = workoutPageStore.getCurrentSetForSpecialSet(specialSetName);
+				const totalSets = workoutPageStore.getTotalSetsForSpecialSet(specialSetName);
 				
-				// Half Split Set: 2 sets total
 				if (specialSetName.toLowerCase().includes("half split set")) {
-					const currentSet = ((workoutPageStore.specialSetProgress[specialSetName] || 0) % 2) + 1;
 					return `Set ${currentSet}/2`;
-				}
-				
-				// X-Y-Z format (e.g., "9-7-5")
-				const dashMatches = specialSetName.match(/(\d+)-(\d+)-(\d+)/);
-				if (dashMatches) {
-					const rounds = dashMatches.slice(1).map(Number);
-					if (roundIndex < rounds.length) {
-						const targetRounds = rounds[roundIndex];
-						return `${targetRounds}/${targetRounds} Rounds`;
-					}
-					return "Completed";
-				}
-				
-				// More complex X-Y-Z-... format
-				const complexDashMatches = specialSetName.match(/(\d+(?:-\d+)+)/);
-				if (complexDashMatches) {
-					const rounds = complexDashMatches[1].split('-').map(Number);
-					if (roundIndex < rounds.length) {
-						const targetRounds = rounds[roundIndex];
-						return `${targetRounds}/${targetRounds} Rounds`;
-					}
-					return "Completed";
-				}
-				
-				// Standard Circuit: "X sets" format
-				const setsMatch = specialSetName.match(/(\d+)\s+sets?/i);
-				if (setsMatch) {
-					const totalSets = parseInt(setsMatch[1]);
-					const currentSet = (workoutPageStore.specialSetProgress[specialSetName] || 0) + 1;
+				} else if (specialSetName.match(/(\d+(?:-\d+)+)/)) {
+					return `${totalSets}/${totalSets} Rounds`;
+				} else {
 					return `Set ${currentSet}/${totalSets}`;
 				}
 			}
 		}
 
 		// If not all completed, show normal progress
-		const progress = workoutPageStore.specialSetProgress[specialSetName] || 0;
-		const roundIndex = workoutPageStore.specialSetCurrentRoundIndex[specialSetName] || 0;
+		const currentSet = workoutPageStore.getCurrentSetForSpecialSet(specialSetName);
+		const totalSets = workoutPageStore.getTotalSetsForSpecialSet(specialSetName);
 		
-		// Half Split Set: 2 sets total
 		if (specialSetName.toLowerCase().includes("half split set")) {
-			const currentSet = (progress % 2) + 1;
 			return `Set ${currentSet}/2`;
+		} else if (specialSetName.match(/(\d+(?:-\d+)+)/)) {
+			const progress = workoutPageStore.specialSetProgress[specialSetName] || 0;
+			return `${progress}/${totalSets} Rounds`;
+		} else {
+			return `Set ${currentSet}/${totalSets}`;
 		}
-		
-		// X-Y-Z format (e.g., "9-7-5")
-		const dashMatches = specialSetName.match(/(\d+)-(\d+)-(\d+)/);
-		if (dashMatches) {
-			const rounds = dashMatches.slice(1).map(Number); // [9, 7, 5]
-			if (roundIndex < rounds.length) {
-				const targetRounds = rounds[roundIndex];
-				return `${progress}/${targetRounds} Rounds`;
-			}
-			return "Completed";
-		}
-		
-		// More complex X-Y-Z-... format
-		const complexDashMatches = specialSetName.match(/(\d+(?:-\d+)+)/);
-		if (complexDashMatches) {
-			const rounds = complexDashMatches[1].split('-').map(Number);
-			if (roundIndex < rounds.length) {
-				const targetRounds = rounds[roundIndex];
-				return `${progress}/${targetRounds} Rounds`;
-			}
-			return "Completed";
-		}
-		
-		// Standard Circuit: "X sets" format
-		const setsMatch = specialSetName.match(/(\d+)\s+sets?/i);
-		if (setsMatch) {
-			const totalSets = parseInt(setsMatch[1]);
-			return `Set ${progress + 1}/${totalSets}`;
-		}
-		
-		// Default fallback
-		return `${progress} Rounds`;
 	};
 
 	// Helper function to calculate progress percentage for the progress bar
@@ -133,44 +77,16 @@ const SpecialSetRow: React.FC<SpecialSetRowProps> = observer(({
 
 		// If not all completed, show normal progress
 		const progress = workoutPageStore.specialSetProgress[specialSetName] || 0;
-		const roundIndex = workoutPageStore.specialSetCurrentRoundIndex[specialSetName] || 0;
+		const totalSets = workoutPageStore.getTotalSetsForSpecialSet(specialSetName);
 		
-		// Half Split Set: 2 sets total
 		if (specialSetName.toLowerCase().includes("half split set")) {
 			return (progress / 2) * 100;
-		}
-		
-		// X-Y-Z format (e.g., "9-7-5")
-		const dashMatches = specialSetName.match(/(\d+)-(\d+)-(\d+)/);
-		if (dashMatches) {
-			const rounds = dashMatches.slice(1).map(Number);
-			if (roundIndex < rounds.length) {
-				const targetRounds = rounds[roundIndex];
-				return (progress / targetRounds) * 100;
-			}
-			return 100;
-		}
-		
-		// More complex X-Y-Z-... format
-		const complexDashMatches = specialSetName.match(/(\d+(?:-\d+)+)/);
-		if (complexDashMatches) {
-			const rounds = complexDashMatches[1].split('-').map(Number);
-			if (roundIndex < rounds.length) {
-				const targetRounds = rounds[roundIndex];
-				return (progress / targetRounds) * 100;
-			}
-			return 100;
-		}
-		
-		// Standard Circuit: "X sets" format
-		const setsMatch = specialSetName.match(/(\d+)\s+sets?/i);
-		if (setsMatch) {
-			const totalSets = parseInt(setsMatch[1]);
+		} else if (specialSetName.match(/(\d+(?:-\d+)+)/)) {
+			return (progress / totalSets) * 100;
+		} else {
+			// Standard circuit
 			return ((progress + 1) / totalSets) * 100;
 		}
-		
-		// Default fallback
-		return 0;
 	};
 
 	return (

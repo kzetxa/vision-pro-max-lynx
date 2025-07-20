@@ -35,6 +35,100 @@ export class WorkoutPageStore {
 	// These will be set by an init method or passed if needed
 	private currentWorkoutId?: string;
 
+	// Helper methods for special set parsing
+	private parseSpecialSetType(specialSetName: string): {
+		type: 'half-split' | 'dash-sequence' | 'standard-circuit' | 'unknown';
+		totalSets?: number;
+		rounds?: number[];
+	} {
+		if (specialSetName.toLowerCase().includes("half split set")) {
+			return { type: 'half-split', totalSets: 2 };
+		}
+
+		// X-Y-Z format (e.g., "9-7-5")
+		const dashMatches = specialSetName.match(/(\d+)-(\d+)-(\d+)/);
+		if (dashMatches) {
+			const rounds = dashMatches.slice(1).map(Number);
+			return { type: 'dash-sequence', rounds };
+		}
+
+		// More complex X-Y-Z-... format
+		const complexDashMatches = specialSetName.match(/(\d+(?:-\d+)+)/);
+		if (complexDashMatches) {
+			const rounds = complexDashMatches[1].split('-').map(Number);
+			return { type: 'dash-sequence', rounds };
+		}
+
+		// Standard Circuit: "X sets" format
+		const setsMatch = specialSetName.match(/(\d+)\s+sets?/i);
+		if (setsMatch) {
+			const totalSets = parseInt(setsMatch[1]);
+			return { type: 'standard-circuit', totalSets };
+		}
+
+		return { type: 'unknown' };
+	}
+
+	public getCurrentSetForSpecialSet(specialSetName: string): number {
+		const progress = this.specialSetProgress[specialSetName] || 0;
+		const parsed = this.parseSpecialSetType(specialSetName);
+
+		switch (parsed.type) {
+			case 'half-split':
+				return (progress % 2) + 1;
+			case 'standard-circuit':
+				return progress + 1;
+			case 'dash-sequence':
+				return progress + 1;
+			default:
+				return progress + 1;
+		}
+	}
+
+	public getTotalSetsForSpecialSet(specialSetName: string): number {
+		const roundIndex = this.specialSetCurrentRoundIndex[specialSetName] || 0;
+		const parsed = this.parseSpecialSetType(specialSetName);
+
+		switch (parsed.type) {
+			case 'half-split':
+				return parsed.totalSets || 2;
+			case 'standard-circuit':
+				return parsed.totalSets || 1;
+			case 'dash-sequence':
+				return parsed.rounds?.[roundIndex] || 0;
+			default:
+				return 1;
+		}
+	}
+
+	private willHaveMoreRoundsAfterCompletion(specialSetName: string): boolean {
+		const currentProgress = this.specialSetProgress[specialSetName] || 0;
+		const currentRoundIndex = this.specialSetCurrentRoundIndex[specialSetName] || 0;
+		const parsed = this.parseSpecialSetType(specialSetName);
+
+		switch (parsed.type) {
+			case 'half-split':
+				const currentSet = (currentProgress % 2) + 1;
+				return currentSet === 1; // More rounds if we're on first set
+			case 'dash-sequence':
+				if (!parsed.rounds || currentRoundIndex >= parsed.rounds.length) return false;
+				const targetRounds = parsed.rounds[currentRoundIndex];
+				const dashProgressAfterCompletion = currentProgress + 1;
+				
+				if (dashProgressAfterCompletion >= targetRounds) {
+					const nextRoundIndex = currentRoundIndex + 1;
+					return nextRoundIndex < parsed.rounds.length;
+				} else {
+					return true;
+				}
+			case 'standard-circuit':
+				const circuitProgressAfterCompletion = currentProgress + 1;
+				return circuitProgressAfterCompletion < (parsed.totalSets || 0);
+			default:
+				return false;
+		}
+	}
+
 	constructor(rootStore: RootStore) {
 		this.rootStore = rootStore;
 		makeObservable(this, {
@@ -154,91 +248,59 @@ export class WorkoutPageStore {
 	handleSpecialSetCompletion = (specialSetName: string, _block: SupabasePopulatedBlock): boolean => {
 		const progress = this.specialSetProgress[specialSetName] || 0;
 		const roundIndex = this.specialSetCurrentRoundIndex[specialSetName] || 0;
+		const parsed = this.parseSpecialSetType(specialSetName);
 		
-		// Half Split Set: 2 sets total
-		if (specialSetName.toLowerCase().includes("half split set")) {
-			const newProgress = progress + 1;
-			if (newProgress >= 2) {
-				// Special set completed
-				this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: 0 });
-				return true;
-			} else {
-				this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: newProgress });
-				return false;
-			}
-		}
-		
-		// X-Y-Z format (e.g., "9-7-5")
-		const dashMatches = specialSetName.match(/(\d+)-(\d+)-(\d+)/);
-		if (dashMatches) {
-			const rounds = dashMatches.slice(1).map(Number);
-			const targetRounds = rounds[roundIndex];
-			const newProgress = progress + 1;
-			
-			if (newProgress >= targetRounds) {
-				const newRoundIndex = roundIndex + 1;
-				if (newRoundIndex >= rounds.length) {
-					// All rounds completed
+		switch (parsed.type) {
+			case 'half-split':
+				const newProgress = progress + 1;
+				if (newProgress >= 2) {
 					this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: 0 });
-					this._setSpecialSetCurrentRoundIndex({ ...this.specialSetCurrentRoundIndex, [specialSetName]: 0 });
 					return true;
 				} else {
-					// Move to next round
-					this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: 0 });
-					this._setSpecialSetCurrentRoundIndex({ ...this.specialSetCurrentRoundIndex, [specialSetName]: newRoundIndex });
+					this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: newProgress });
 					return false;
 				}
-			} else {
-				this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: newProgress });
-				return false;
-			}
-		}
-		
-		// More complex X-Y-Z-... format
-		const complexDashMatches = specialSetName.match(/(\d+(?:-\d+)+)/);
-		if (complexDashMatches) {
-			const rounds = complexDashMatches[1].split('-').map(Number);
-			const targetRounds = rounds[roundIndex];
-			const newProgress = progress + 1;
 			
-			if (newProgress >= targetRounds) {
-				const newRoundIndex = roundIndex + 1;
-				if (newRoundIndex >= rounds.length) {
-					// All rounds completed
+			case 'dash-sequence':
+				if (!parsed.rounds || roundIndex >= parsed.rounds.length) return true;
+				const targetRounds = parsed.rounds[roundIndex];
+				const newDashProgress = progress + 1;
+				
+				if (newDashProgress >= targetRounds) {
+					const newRoundIndex = roundIndex + 1;
+					if (newRoundIndex >= parsed.rounds.length) {
+						// All rounds completed
+						this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: 0 });
+						this._setSpecialSetCurrentRoundIndex({ ...this.specialSetCurrentRoundIndex, [specialSetName]: 0 });
+						return true;
+					} else {
+						// Move to next round
+						this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: 0 });
+						this._setSpecialSetCurrentRoundIndex({ ...this.specialSetCurrentRoundIndex, [specialSetName]: newRoundIndex });
+						return false;
+					}
+				} else {
+					this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: newDashProgress });
+					return false;
+				}
+			
+			case 'standard-circuit':
+				const totalSets = parsed.totalSets || 1;
+				const newCircuitProgress = progress + 1;
+				
+				if (newCircuitProgress >= totalSets) {
 					this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: 0 });
-					this._setSpecialSetCurrentRoundIndex({ ...this.specialSetCurrentRoundIndex, [specialSetName]: 0 });
 					return true;
 				} else {
-					// Move to next round
-					this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: 0 });
-					this._setSpecialSetCurrentRoundIndex({ ...this.specialSetCurrentRoundIndex, [specialSetName]: newRoundIndex });
+					this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: newCircuitProgress });
 					return false;
 				}
-			} else {
-				this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: newProgress });
-				return false;
-			}
-		}
-		
-		// Standard Circuit: "X sets" format
-		const setsMatch = specialSetName.match(/(\d+)\s+sets?/i);
-		if (setsMatch) {
-			const totalSets = parseInt(setsMatch[1]);
-			const newProgress = progress + 1;
 			
-			if (newProgress >= totalSets) {
-				// Special set completed
-				this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: 0 });
-				return true;
-			} else {
-				this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: newProgress });
+			default:
+				// Unknown type, just increment progress
+				this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: progress + 1 });
 				return false;
-			}
 		}
-		
-		// Default: just increment progress
-		this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: progress + 1 });
-		return false;
 	};
 
 	async initializePage(workoutId: string): Promise<void> {
@@ -708,8 +770,8 @@ export class WorkoutPageStore {
 				}
 			} else {
 				// For other special set types, check if we need to repeat the set
-				const shouldRepeat = this.shouldRepeatSpecialSet(specialSet);
-				if (shouldRepeat) {
+				const willHaveMoreRounds = this.willHaveMoreRoundsAfterCompletion(specialSet);
+				if (willHaveMoreRounds) {
 					// Go back to first exercise in special set
 					return specialSetExercises[0];
 				} else {
@@ -728,43 +790,6 @@ export class WorkoutPageStore {
 		const maxSpecialSetIndex = Math.max(...specialSetIndices);
 		if (maxSpecialSetIndex === block.block_exercises.length - 1) return null;
 		return block.block_exercises[maxSpecialSetIndex + 1];
-	}
-
-	// Helper to determine if a special set should repeat
-	private shouldRepeatSpecialSet(specialSet: string): boolean {
-		const progress = this.specialSetProgress[specialSet] || 0;
-		const roundIndex = this.specialSetCurrentRoundIndex[specialSet] || 0;
-
-		// X-Y-Z format (e.g., "9-7-5")
-		const dashMatches = specialSet.match(/(\d+)-(\d+)-(\d+)/);
-		if (dashMatches) {
-			const rounds = dashMatches.slice(1).map(Number);
-			if (roundIndex < rounds.length) {
-				const targetRounds = rounds[roundIndex];
-				return progress < targetRounds;
-			}
-			return false;
-		}
-
-		// More complex X-Y-Z-... format
-		const complexDashMatches = specialSet.match(/(\d+(?:-\d+)+)/);
-		if (complexDashMatches) {
-			const rounds = complexDashMatches[1].split('-').map(Number);
-			if (roundIndex < rounds.length) {
-				const targetRounds = rounds[roundIndex];
-				return progress < targetRounds;
-			}
-			return false;
-		}
-
-		// Standard Circuit: "X sets" format
-		const setsMatch = specialSet.match(/(\d+)\s+sets?/i);
-		if (setsMatch) {
-			const totalSets = parseInt(setsMatch[1]);
-			return (progress + 1) < totalSets;
-		}
-
-		return false;
 	}
 	// End of new getters
 } 

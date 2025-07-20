@@ -31,15 +31,14 @@ const SpecialSetRow: React.FC<SpecialSetRowProps> = observer(({
 
 			if (allCompleted) {
 				// Show completed state for current round
-				const currentSet = workoutPageStore.getCurrentSetForSpecialSet(specialSetName);
 				const totalSets = workoutPageStore.getTotalSetsForSpecialSet(specialSetName);
 				
 				if (specialSetName.toLowerCase().includes("half split set")) {
-					return `Set ${currentSet}/2`;
+					return `Set 2/2`;
 				} else if (specialSetName.match(/(\d+(?:-\d+)+)/)) {
-					return `${totalSets}/${totalSets} Rounds`;
+					return `All Rounds Completed`;
 				} else {
-					return `Set ${currentSet}/${totalSets}`;
+					return `Set ${totalSets}/${totalSets}`;
 				}
 			}
 		}
@@ -85,7 +84,7 @@ const SpecialSetRow: React.FC<SpecialSetRowProps> = observer(({
 			return (progress / totalSets) * 100;
 		} else {
 			// Standard circuit
-			return ((progress + 1) / totalSets) * 100;
+			return ((progress) / totalSets) * 100;
 		}
 	};
 

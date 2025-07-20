@@ -75,13 +75,13 @@ export class WorkoutPageStore {
 
 		switch (parsed.type) {
 			case 'half-split':
-				return (progress % 2) + 1;
+				return (progress % 2);
 			case 'standard-circuit':
-				return progress + 1;
+				return progress;
 			case 'dash-sequence':
 				return progress + 1;
 			default:
-				return progress + 1;
+				return progress;
 		}
 	}
 

@@ -1,7 +1,8 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
-import * as Checkbox from "@radix-ui/react-checkbox";
-import { CheckIcon, CameraIcon } from "@radix-ui/react-icons";
+// import * as Checkbox from "@radix-ui/react-checkbox";
+// import { CheckIcon, CameraIcon } from "@radix-ui/react-icons";
+import { CameraIcon } from "@radix-ui/react-icons";
 import { useStore } from "../../contexts/StoreContext";
 import ExerciseFeedbackDialog from "./ExerciseFeedbackDialog";
 import styles from "./ExerciseDetailDialog.module.scss";
@@ -28,25 +29,26 @@ const ExerciseDetailHeader: React.FC<ExerciseDetailHeaderProps> = observer(() =>
 		return <div className={styles.headerRow}>Header data not available.</div>;
 	}
 
-	const { exerciseName, repsText, isComplete, exercise, blockExercise } = details;
+	const { exerciseName, repsText, exercise } = details;
+	// const { exerciseName, repsText, isComplete, exercise, blockExercise } = details;
 
-	const handleToggleCompletion = () => {
-		// Call the store action to toggle completion
-		// The existing action `handleToggleExerciseCompleteList` takes blockExerciseId and the exerciseDefinition
-		workoutPageStore.handleToggleExerciseCompleteList(blockExerciseId, blockExercise);
-	};
+	// const handleToggleCompletion = () => {
+	// 	// Call the store action to toggle completion
+	// 	// The existing action `handleToggleExerciseCompleteList` takes blockExerciseId and the exerciseDefinition
+	// 	workoutPageStore.handleToggleExerciseCompleteList(blockExerciseId, blockExercise);
+	// };
 
-	const handleCheckboxClick = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-		e.stopPropagation();
-		handleToggleCompletion();
-	};
+	// const handleCheckboxClick = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+	// 	e.stopPropagation();
+	// 	handleToggleCompletion();
+	// };
 
-	const handleCheckboxKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
-		if (e.key === " " || e.key === "Enter") {
-			e.stopPropagation();
-			handleToggleCompletion();
-		}
-	};
+	// const handleCheckboxKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+	// 	if (e.key === " " || e.key === "Enter") {
+	// 		e.stopPropagation();
+	// 		handleToggleCompletion();
+	// 	}
+	// };
 
 	const handleFeedbackButtonClick = () => {
 		// Ensure exercise object is available before pushing dialog

@@ -218,32 +218,6 @@ export class WorkoutPageStore {
 		this.isSummaryLoading = loading;
 	}
 
-	// Method to calculate block completion progress
-	calculateBlockProgress = (block: SupabasePopulatedBlock): number => {
-		if (!block.block_exercises || block.block_exercises.length === 0) {
-			return 100;
-		}
-
-		const totalSets = block.block_exercises.reduce((max, ex) => Math.max(max, ex.sets || 1), 1);
-		if (totalSets === 0) return 100;
-
-		const completedSetsForBlock = this.completedSets[block.id] || 0;
-
-		let exercisesCompletedInCurrentSet = 0;
-		if (completedSetsForBlock < totalSets) {
-			for (const be of block.block_exercises) {
-				if (this.exerciseCompletionInCurrentSet[be.id]) {
-					exercisesCompletedInCurrentSet++;
-				}
-			}
-		}
-
-		const progressInCurrentSet = block.block_exercises.length > 0 ? (exercisesCompletedInCurrentSet / block.block_exercises.length) : 0;
-		const totalProgress = (completedSetsForBlock + progressInCurrentSet) / totalSets;
-
-		return Math.min(totalProgress * 100, 100);
-	};
-
 	// Helper method to handle special set progression
 	handleSpecialSetCompletion = (specialSetName: string, _block: SupabasePopulatedBlock): boolean => {
 		const progress = this.specialSetProgress[specialSetName] || 0;
@@ -401,6 +375,29 @@ export class WorkoutPageStore {
 		}
 	};
 
+	isBlockComplete = (block: SupabasePopulatedBlock): boolean => {
+		const blockExercises = block.block_exercises;
+		let blockComplete = true;
+		blockExercises.forEach(exercise => {
+			if (!this.exerciseCompletionInCurrentSet[exercise.id]) {
+				blockComplete = false;
+			}
+		});
+		return blockComplete;
+	};
+
+	isWorkoutComplete = (): boolean => {
+		const blocks = this.workoutData?.blocks;
+		if (!blocks) return false;
+		let workoutComplete = true;
+		blocks.forEach(block => {
+			if (!this.isBlockComplete(block)) {
+				workoutComplete = false;
+			}
+		});
+		return workoutComplete;
+	};
+
 	// Handle completion for exercises in special sets
 	handleSpecialSetExerciseCompletion = (
 		specialSetName: string,
@@ -509,14 +506,18 @@ export class WorkoutPageStore {
 		
 		this.workoutData.blocks.forEach(block => {
 			const totalSetsInBlock = block.block_exercises.reduce((max, ex) => Math.max(max, ex.sets || 1), 1);
-			const completedSetsForBlock = this.completedSets[block.id] || 0;
+			const completedSetsForBlock = Object.keys(this.exerciseCompletionInCurrentSet)
+				.filter(exId => this.exerciseCompletionInCurrentSet[exId] && block.block_exercises.some(be => be.id === exId))
+				.length;
 			
 			setsCompleted += completedSetsForBlock;
 			setsSkipped += totalSetsInBlock - completedSetsForBlock;
 
 			block.block_exercises.forEach(be => {
-				const { reps } = parseSetsAndReps(be);
-				repsCompleted += completedSetsForBlock * reps;
+				if (this.exerciseCompletionInCurrentSet[be.id]) {
+					const { reps } = parseSetsAndReps(be);
+					repsCompleted += reps;
+				}
 			});
 		});
 
@@ -526,7 +527,8 @@ export class WorkoutPageStore {
 			totalTime: new Date(totalTimeSeconds * 1000).toISOString().substr(14, 5),
 			sets: setsCompleted,
 			reps: repsCompleted,
-			skipped: setsSkipped,
+			// skipped: setsSkipped, this is broken, for now, set to 0
+			skipped: 0,
 		};
 	}
 

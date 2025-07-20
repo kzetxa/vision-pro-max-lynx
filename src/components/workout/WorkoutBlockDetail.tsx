@@ -19,12 +19,12 @@ const WorkoutBlockDetail: React.FC<WorkoutBlockDetailProps> = observer(({
 }) => {
 	const { workoutPageStore } = useStore();
 
-	const openBlockIds = blocks.map(block => block.id);
-
-	// If it's empty, inform the user and return null.
-	if (blocks.length === 0) {
-		return <p>No blocks found in this workout.</p>;
-	}
+	const openBlockIds = blocks
+		.filter(block => {
+			const isComplete = workoutPageStore.isBlockComplete(block);
+			return !isComplete; // Keep open if not all sets completed
+		})
+		.map(block => block.id);
 
 	return (
 		<Accordion.Root 

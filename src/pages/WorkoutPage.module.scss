@@ -1,15 +1,9 @@
 @use '../styles/theme.module.scss' as theme;
 
 .workoutPageContainer {
+  margin: 0 auto;
   width: 100%;
   max-width: 900px; // Max width for workout details
-  margin: theme.$spacing-lg auto;
-  padding: theme.$spacing-md;
-
-  @media (min-width: 768px) {
-    padding: theme.$spacing-xl;
-    margin: theme.$spacing-xl auto;
-  }
 }
 
 // Styles for the header image

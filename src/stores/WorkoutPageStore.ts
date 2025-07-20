@@ -24,6 +24,8 @@ export class WorkoutPageStore {
 	isFinishDialogOpen: boolean = false;
 	completedSets: { [blockId: string]: number } = {};
 	exerciseCompletionInCurrentSet: { [blockExerciseId:string]: boolean } = {};
+	specialSetProgress: { [specialSetName: string]: number } = {}; // Tracks completed rounds for each special set
+	specialSetCurrentRoundIndex: { [specialSetName: string]: number } = {}; // For X-Y-Z format special sets, tracks which round we're on
 	currentExerciseAudioUrl: string | null = null;
 	isAudioLoading: boolean = false;
 	workoutSummary: WorkoutSummary | null = null;
@@ -43,6 +45,8 @@ export class WorkoutPageStore {
 			isFinishDialogOpen: observable,
 			completedSets: observable.deep,
 			exerciseCompletionInCurrentSet: observable.deep,
+			specialSetProgress: observable.deep,
+			specialSetCurrentRoundIndex: observable.deep,
 			currentExerciseAudioUrl: observable,
 			isAudioLoading: observable,
 			workoutSummary: observable,
@@ -55,6 +59,9 @@ export class WorkoutPageStore {
 			openFinishDialog: action,
 			closeFinishDialog: action,
 			handleToggleExerciseCompleteList: action,
+			handleSpecialSetExerciseCompletion: action,
+			handleRegularExerciseCompletion: action,
+			handleSpecialSetCompletion: action,
 			handleFinishWorkout: action,
 			fetchAndSetExerciseAudio: action,
 			checkAndLoadSummary: action,
@@ -64,6 +71,8 @@ export class WorkoutPageStore {
 			_setError: action,
 			_setCompletedSets: action,
 			_setExerciseCompletionInCurrentSet: action,
+			_setSpecialSetProgress: action,
+			_setSpecialSetCurrentRoundIndex: action,
 			_clearError: action,
 			_setCurrentExerciseAudioUrl: action,
 			_setAudioLoading: action,
@@ -95,6 +104,12 @@ export class WorkoutPageStore {
 	}
 	_setExerciseCompletionInCurrentSet(completion: { [exerciseId: string]: boolean }): void {
 		this.exerciseCompletionInCurrentSet = completion;
+	}
+	_setSpecialSetProgress(progress: { [specialSetName: string]: number }): void {
+		this.specialSetProgress = progress;
+	}
+	_setSpecialSetCurrentRoundIndex(index: { [specialSetName: string]: number }): void {
+		this.specialSetCurrentRoundIndex = index;
 	}
 	_setCurrentExerciseAudioUrl(url: string | null): void {
 		this.currentExerciseAudioUrl = url;
@@ -135,6 +150,97 @@ export class WorkoutPageStore {
 		return Math.min(totalProgress * 100, 100);
 	};
 
+	// Helper method to handle special set progression
+	handleSpecialSetCompletion = (specialSetName: string, block: SupabasePopulatedBlock): boolean => {
+		const progress = this.specialSetProgress[specialSetName] || 0;
+		const roundIndex = this.specialSetCurrentRoundIndex[specialSetName] || 0;
+		
+		// Half Split Set: 2 sets total
+		if (specialSetName.toLowerCase().includes("half split set")) {
+			const newProgress = progress + 1;
+			if (newProgress >= 2) {
+				// Special set completed
+				this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: 0 });
+				return true;
+			} else {
+				this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: newProgress });
+				return false;
+			}
+		}
+		
+		// X-Y-Z format (e.g., "9-7-5")
+		const dashMatches = specialSetName.match(/(\d+)-(\d+)-(\d+)/);
+		if (dashMatches) {
+			const rounds = dashMatches.slice(1).map(Number);
+			const targetRounds = rounds[roundIndex];
+			const newProgress = progress + 1;
+			
+			if (newProgress >= targetRounds) {
+				const newRoundIndex = roundIndex + 1;
+				if (newRoundIndex >= rounds.length) {
+					// All rounds completed
+					this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: 0 });
+					this._setSpecialSetCurrentRoundIndex({ ...this.specialSetCurrentRoundIndex, [specialSetName]: 0 });
+					return true;
+				} else {
+					// Move to next round
+					this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: 0 });
+					this._setSpecialSetCurrentRoundIndex({ ...this.specialSetCurrentRoundIndex, [specialSetName]: newRoundIndex });
+					return false;
+				}
+			} else {
+				this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: newProgress });
+				return false;
+			}
+		}
+		
+		// More complex X-Y-Z-... format
+		const complexDashMatches = specialSetName.match(/(\d+(?:-\d+)+)/);
+		if (complexDashMatches) {
+			const rounds = complexDashMatches[1].split('-').map(Number);
+			const targetRounds = rounds[roundIndex];
+			const newProgress = progress + 1;
+			
+			if (newProgress >= targetRounds) {
+				const newRoundIndex = roundIndex + 1;
+				if (newRoundIndex >= rounds.length) {
+					// All rounds completed
+					this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: 0 });
+					this._setSpecialSetCurrentRoundIndex({ ...this.specialSetCurrentRoundIndex, [specialSetName]: 0 });
+					return true;
+				} else {
+					// Move to next round
+					this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: 0 });
+					this._setSpecialSetCurrentRoundIndex({ ...this.specialSetCurrentRoundIndex, [specialSetName]: newRoundIndex });
+					return false;
+				}
+			} else {
+				this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: newProgress });
+				return false;
+			}
+		}
+		
+		// Standard Circuit: "X sets" format
+		const setsMatch = specialSetName.match(/(\d+)\s+sets?/i);
+		if (setsMatch) {
+			const totalSets = parseInt(setsMatch[1]);
+			const newProgress = progress + 1;
+			
+			if (newProgress >= totalSets) {
+				// Special set completed
+				this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: 0 });
+				return true;
+			} else {
+				this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: newProgress });
+				return false;
+			}
+		}
+		
+		// Default: just increment progress
+		this._setSpecialSetProgress({ ...this.specialSetProgress, [specialSetName]: progress + 1 });
+		return false;
+	};
+
 	async initializePage(workoutId: string): Promise<void> {
 		this.currentWorkoutId = workoutId;
 		this.startTime = Date.now();
@@ -156,6 +262,8 @@ export class WorkoutPageStore {
 					const progress = loadWorkoutProgressFromStorage(workoutId);
 					this._setCompletedSets(progress.completedSets);
 					this._setExerciseCompletionInCurrentSet(progress.exerciseCompletionInCurrentSet);
+					this._setSpecialSetProgress(progress.specialSetProgress);
+					this._setSpecialSetCurrentRoundIndex(progress.specialSetCurrentRoundIndex);
 				} else {
 					this._setError("Workout not found.");
 					this._setWorkoutData(null); // Clear stale data
@@ -221,42 +329,79 @@ export class WorkoutPageStore {
 			[blockExerciseId]: !this.exerciseCompletionInCurrentSet[blockExerciseId],
 		};
 		this._setExerciseCompletionInCurrentSet(newCompletions);
-	
-		// 2. Check if this action completes the current set
-		const setJustCompleted = block.block_exercises.every(ex => newCompletions[ex.id]);
-	
-		let newCompletedSets = this.completedSets;
-	
-		if (setJustCompleted) {
-			const totalSets = block.block_exercises.reduce((max, ex) => Math.max(max, ex.sets || 1), 1);
-			const previouslyCompletedSets = this.completedSets[blockId] || 0;
-	
-			if (previouslyCompletedSets < totalSets) {
-				const newCompletedSetsCount = previouslyCompletedSets + 1;
-				newCompletedSets = { ...this.completedSets, [blockId]: newCompletedSetsCount };
-				this._setCompletedSets(newCompletedSets);
-	
-				// 3. If there's another set to do, reset the checkboxes for the block
-				if (newCompletedSetsCount < totalSets) {
-					const completionsForNextSet = { ...newCompletions };
-					block.block_exercises.forEach(ex => {
-						completionsForNextSet[ex.id] = false;
-					});
-					this._setExerciseCompletionInCurrentSet(completionsForNextSet);
-					// Save and exit
-					saveWorkoutProgressToStorage(this.currentWorkoutId, {
-						completedSets: newCompletedSets,
-						exerciseCompletionInCurrentSet: completionsForNextSet,
-					});
-					return;
-				}
+
+		// Check if this exercise is part of a special set
+		if (exerciseDefinition.special_set) {
+			this.handleSpecialSetExerciseCompletion(exerciseDefinition.special_set, block, newCompletions);
+		} else {
+			// Handle regular exercise completion (non-special set)
+			this.handleRegularExerciseCompletion(blockExerciseId, exerciseDefinition, block, newCompletions);
+		}
+	};
+
+	// Handle completion for exercises in special sets
+	handleSpecialSetExerciseCompletion = (
+		specialSetName: string,
+		block: SupabasePopulatedBlock,
+		newCompletions: { [blockExerciseId: string]: boolean }
+	): void => {
+		// Find all exercises in this special set
+		const specialSetExercises = block.block_exercises.filter(ex => ex.special_set === specialSetName);
+		
+		// Check if all exercises in this special set are completed
+		const specialSetCompleted = specialSetExercises.every(ex => newCompletions[ex.id]);
+		
+		if (specialSetCompleted) {
+			// Progress the special set
+			const isSpecialSetFullyComplete = this.handleSpecialSetCompletion(specialSetName, block);
+			
+			if (!isSpecialSetFullyComplete) {
+				// Reset checkboxes for this special set for the next round/set
+				const completionsForNextRound = { ...newCompletions };
+				specialSetExercises.forEach(ex => {
+					completionsForNextRound[ex.id] = false;
+				});
+				this._setExerciseCompletionInCurrentSet(completionsForNextRound);
+				
+				// Save and exit
+				saveWorkoutProgressToStorage(this.currentWorkoutId!, {
+					completedSets: this.completedSets,
+					exerciseCompletionInCurrentSet: completionsForNextRound,
+					specialSetProgress: this.specialSetProgress,
+					specialSetCurrentRoundIndex: this.specialSetCurrentRoundIndex,
+				});
+				return;
 			}
 		}
 		
-		// 4. Default save for toggling an exercise or completing the final set
-		saveWorkoutProgressToStorage(this.currentWorkoutId, {
-			completedSets: newCompletedSets,
+		// Default save for partial completion or final completion
+		saveWorkoutProgressToStorage(this.currentWorkoutId!, {
+			completedSets: this.completedSets,
 			exerciseCompletionInCurrentSet: newCompletions,
+			specialSetProgress: this.specialSetProgress,
+			specialSetCurrentRoundIndex: this.specialSetCurrentRoundIndex,
+		});
+	};
+
+	// Handle completion for regular exercises (not in special sets)
+	handleRegularExerciseCompletion = (
+		blockExerciseId: string,
+		exerciseDefinition: SupabaseBlockExercise,
+		block: SupabasePopulatedBlock,
+		newCompletions: { [blockExerciseId: string]: boolean }
+	): void => {
+		// For regular exercises, mark as complete immediately (all sets at once)
+		if (newCompletions[blockExerciseId]) {
+			// Exercise was just completed - mark all sets as complete
+			// No need to track individual sets for regular exercises per requirements
+		}
+		
+		// Save the completion state
+		saveWorkoutProgressToStorage(this.currentWorkoutId!, {
+			completedSets: this.completedSets,
+			exerciseCompletionInCurrentSet: newCompletions,
+			specialSetProgress: this.specialSetProgress,
+			specialSetCurrentRoundIndex: this.specialSetCurrentRoundIndex,
 		});
 	};
 
@@ -295,6 +440,8 @@ export class WorkoutPageStore {
 					saveWorkoutProgressToStorage(this.currentWorkoutId, {
 						completedSets: newCompletedSets,
 						exerciseCompletionInCurrentSet: completionsForNextSet,
+						specialSetProgress: this.specialSetProgress,
+						specialSetCurrentRoundIndex: this.specialSetCurrentRoundIndex,
 					});
 					return;
 				}
@@ -304,6 +451,8 @@ export class WorkoutPageStore {
 		saveWorkoutProgressToStorage(this.currentWorkoutId, {
 			completedSets: newCompletedSets,
 			exerciseCompletionInCurrentSet: newCompletions,
+			specialSetProgress: this.specialSetProgress,
+			specialSetCurrentRoundIndex: this.specialSetCurrentRoundIndex,
 		});
 	};
 

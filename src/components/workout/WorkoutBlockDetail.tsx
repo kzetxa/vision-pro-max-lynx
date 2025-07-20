@@ -42,11 +42,9 @@ const WorkoutBlockDetail: React.FC<WorkoutBlockDetailProps> = observer(({
 			value={openBlockIds}
 		>
 			{blocks.map((block) => {
-				const blockProgressPercent = workoutPageStore.calculateBlockProgress(block);
 				return (
 					<AccordionBlockItem 
 						block={block}
-						blockProgressPercent={blockProgressPercent}
 						key={block.id}
 						onToggleExerciseComplete={workoutPageStore.handleToggleExerciseCompleteList} // Pass store action
 					/>

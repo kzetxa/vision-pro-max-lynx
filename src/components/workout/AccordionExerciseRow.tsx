@@ -19,7 +19,7 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 	isComplete,
 	onToggleComplete,
 }) => {
-	const { dialogStore } = useStore();
+	const { dialogStore, workoutPageStore } = useStore();
 	const exercise = blockExercise.exercise;
 
 	if (!exercise || !exercise.current_name) {
@@ -27,12 +27,35 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 		return null;
 	}
 
+	// Helper function to determine current set for special sets
+	const getCurrentSetForSpecialSet = (specialSet: string): number => {
+		if (!specialSet) return 1;
+		const progress = workoutPageStore.specialSetProgress[specialSet] || 0;
+		const roundIndex = workoutPageStore.specialSetCurrentRoundIndex[specialSet] || 0;
+		
+		// For Half Split Set, determine set based on progress
+		if (specialSet.toLowerCase().includes("half split set")) {
+			return (progress % 2) + 1; // Alternates between 1 and 2
+		}
+		
+		// For other special sets, we'll handle this later
+		return progress + 1;
+	};
+
 	const parsedRepsInfo = parseSetsAndReps(blockExercise);
 	let repsText = "";
 	if (parsedRepsInfo.reps > 0 && (!blockExercise.unit || blockExercise.unit.toLowerCase().includes("rep") || blockExercise.unit.trim() === "")) {
 		repsText = `${parsedRepsInfo.reps} reps`;
-		// Add side information if present in sets_and_reps_text
-		if (blockExercise.sets_and_reps_text) {
+		// Handle Half Split Set side display
+		if (blockExercise.special_set && blockExercise.special_set.toLowerCase().includes("half split set")) {
+			const currentSet = getCurrentSetForSpecialSet(blockExercise.special_set);
+			if (currentSet === 1) {
+				repsText += " Left Side";
+			} else {
+				repsText += " Right Side";
+			}
+		} else if (blockExercise.sets_and_reps_text) {
+			// Add side information if present in sets_and_reps_text for non-special sets
 			const text = blockExercise.sets_and_reps_text.toLowerCase();
 			if (text.includes("right side")) {
 				repsText += " Right Side";
@@ -78,8 +101,12 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 				)}
 			</div>
 			<div style={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
-				<span className={styles.exerciseTitle}>{exercise.current_name}</span>
-				{parsedRepsInfo.sets > 1 && <span className={styles.exerciseRepsSupportingText}>x {parsedRepsInfo.sets} sets</span>}
+				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+					<span className={styles.exerciseTitle}>{exercise.current_name}</span>
+					{!blockExercise.special_set && blockExercise.sets && blockExercise.sets > 1 && (
+						<span className={styles.setsText}>{blockExercise.sets} sets</span>
+					)}
+				</div>
 			</div>
 			<div className={styles.specialContainer}>
 				{blockExercise.special_instructions && <span className={styles.specialInstructions}>{blockExercise.special_instructions}</span>}

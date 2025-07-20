@@ -3,6 +3,8 @@ import { getClientIdFromUrl } from "./utils";
 export interface WorkoutProgressStorage {
   completedSets: { [blockId: string]: number };
   exerciseCompletionInCurrentSet: { [blockExerciseId: string]: boolean };
+  specialSetProgress: { [specialSetName: string]: number };
+  specialSetCurrentRoundIndex: { [specialSetName: string]: number };
 }
 
 const getLocalStorageKey = (workoutId: string): string => {
@@ -13,22 +15,39 @@ const getLocalStorageKey = (workoutId: string): string => {
  * Loads progress for all exercises in a given workout and client.
  */
 export const loadWorkoutProgressFromStorage = (workoutId?: string): WorkoutProgressStorage => {
-	if (!workoutId) return { completedSets: {}, exerciseCompletionInCurrentSet: {} };
+	if (!workoutId) return { 
+		completedSets: {}, 
+		exerciseCompletionInCurrentSet: {},
+		specialSetProgress: {},
+		specialSetCurrentRoundIndex: {}
+	};
 	const key = getLocalStorageKey(workoutId);
 	try {
 		const storedProgress = localStorage.getItem(key);
 		if (storedProgress) {
 			const data = JSON.parse(storedProgress);
-			// ensure both keys exist
+			// ensure all keys exist
 			return {
 				completedSets: data.completedSets || {},
-				exerciseCompletionInCurrentSet: data.exerciseCompletionInCurrentSet || {}
+				exerciseCompletionInCurrentSet: data.exerciseCompletionInCurrentSet || {},
+				specialSetProgress: data.specialSetProgress || {},
+				specialSetCurrentRoundIndex: data.specialSetCurrentRoundIndex || {}
 			};
 		}
-		return { completedSets: {}, exerciseCompletionInCurrentSet: {} };
+		return { 
+			completedSets: {}, 
+			exerciseCompletionInCurrentSet: {},
+			specialSetProgress: {},
+			specialSetCurrentRoundIndex: {}
+		};
 	} catch (error) {
 		console.error("Error loading progress from local storage:", error);
-		return { completedSets: {}, exerciseCompletionInCurrentSet: {} };
+		return { 
+			completedSets: {}, 
+			exerciseCompletionInCurrentSet: {},
+			specialSetProgress: {},
+			specialSetCurrentRoundIndex: {}
+		};
 	}
 };
 

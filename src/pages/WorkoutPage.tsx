@@ -4,7 +4,6 @@ import { useParams } from "react-router-dom";
 import FinishWorkoutDialog from "../components/FinishWorkoutDialog/FinishWorkoutDialog";
 import ViewToggleButton from "../components/workout/ViewToggleButton";
 import WorkoutBlockDetail from "../components/workout/WorkoutBlockDetail";
-import WorkoutBlockList from "../components/workout/WorkoutBlockList";
 import WorkoutHeader from "../components/workout/WorkoutHeader";
 import { useStore } from "../contexts/StoreContext";
 import styles from "./WorkoutPage.module.scss";
@@ -47,16 +46,9 @@ const WorkoutPage: React.FC = observer(() => {
 						isListView={workoutPageStore.isListView} 
 						onToggle={workoutPageStore.toggleListView} 
 					/>
-					{workoutPageStore.isListView ? (
-						<WorkoutBlockList 
-							blocks={workoutPageStore.workoutData.blocks}
-							onToggleExerciseComplete={workoutPageStore.handleToggleExerciseCompleteList}
-						/>
-					) : (
-						<WorkoutBlockDetail 
-							blocks={workoutPageStore.workoutData.blocks}
-						/>
-					)}
+					<WorkoutBlockDetail 
+						blocks={workoutPageStore.workoutData.blocks}
+					/>
 					<button
 						className={styles.finishButton}
 						onClick={workoutPageStore.handleFinishWorkout}

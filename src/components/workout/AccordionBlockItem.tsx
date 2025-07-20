@@ -18,10 +18,13 @@ const TriggerLeftContent: React.FC<{
 	blockId: string;
 	intensityText: string;
 	restText: string;
-}> = ({ publicName, blockId, intensityText, restText }) => {
+}> = observer(({ publicName, blockId, intensityText, restText }) => {
+	const { workoutPageStore } = useStore();
+	const isListView = workoutPageStore.isListView;
+
 	return (
 		<div className={styles.triggerLeft}>
-			<span className={styles.accordionTitle}>{publicName || `Block ${blockId}`}</span>
+			<span className={isListView ? styles.listViewTitle : styles.accordionTitle}>{publicName || `Block ${blockId}`}</span>
 			<div className={styles.accordionSubtitleContainer}>
 				{intensityText && (
 					<span className={styles.intensityText}>{intensityText}</span>
@@ -33,7 +36,7 @@ const TriggerLeftContent: React.FC<{
 			</div>
 		</div>
 	);
-};
+});
 
 const AccordionBlockItem: React.FC<AccordionBlockItemProps> = observer(({
 	block,

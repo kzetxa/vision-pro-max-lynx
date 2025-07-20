@@ -19,7 +19,7 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 	isComplete,
 	onToggleComplete,
 }) => {
-	const { dialogStore, workoutPageStore } = useStore();
+	const { dialogStore, workoutPageStore, workoutPageStore: { isListView } } = useStore();
 	const exercise = blockExercise.exercise;
 
 	if (!exercise || !exercise.current_name) {
@@ -82,17 +82,19 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 					<div className={styles.greenBullet} />
 				</div>
 			)}
-			<div className={styles.imageContainer}>
-				{exercise.thumbnail ? (
-					<img
-						alt={exercise.current_name}
-						className={styles.actualImage}
-						src={exercise.thumbnail}
-					/>
-				) : (
-					<span className={styles.placeholderText}>Image</span>
-				)}
-			</div>
+			{!isListView && (
+				<div className={styles.imageContainer}>
+					{exercise.thumbnail ? (
+						<img
+							alt={exercise.current_name}
+							className={styles.actualImage}
+							src={exercise.thumbnail}
+						/>
+					) : (
+						<span className={styles.placeholderText}>Image</span>
+					)}
+				</div>
+			)}
 			<div style={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
 				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 					<span className={styles.exerciseTitle}>{exercise.current_name}</span>

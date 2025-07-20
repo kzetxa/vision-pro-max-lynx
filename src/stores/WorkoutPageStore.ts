@@ -420,40 +420,13 @@ export class WorkoutPageStore {
 		};
 		this._setExerciseCompletionInCurrentSet(newCompletions);
 
-		// 2. Check if this action completes the current set
-		const setJustCompleted = block.block_exercises.every(ex => newCompletions[ex.id]);
-		let newCompletedSets = this.completedSets;
-		if (setJustCompleted) {
-			const totalSets = block.block_exercises.reduce((max, ex) => Math.max(max, ex.sets || 1), 1);
-			const previouslyCompletedSets = this.completedSets[blockId] || 0;
-			if (previouslyCompletedSets < totalSets) {
-				const newCompletedSetsCount = previouslyCompletedSets + 1;
-				newCompletedSets = { ...this.completedSets, [blockId]: newCompletedSetsCount };
-				this._setCompletedSets(newCompletedSets);
-				// 3. If there's another set to do, reset the checkboxes for the block
-				if (newCompletedSetsCount < totalSets) {
-					const completionsForNextSet = { ...newCompletions };
-					block.block_exercises.forEach(ex => {
-						completionsForNextSet[ex.id] = false;
-					});
-					this._setExerciseCompletionInCurrentSet(completionsForNextSet);
-					saveWorkoutProgressToStorage(this.currentWorkoutId, {
-						completedSets: newCompletedSets,
-						exerciseCompletionInCurrentSet: completionsForNextSet,
-						specialSetProgress: this.specialSetProgress,
-						specialSetCurrentRoundIndex: this.specialSetCurrentRoundIndex,
-					});
-					return;
-				}
-			}
+		// Check if this exercise is part of a special set
+		if (exerciseDefinition.special_set) {
+			this.handleSpecialSetExerciseCompletion(exerciseDefinition.special_set, block, newCompletions);
+		} else {
+			// Handle regular exercise completion (non-special set)
+			this.handleRegularExerciseCompletion(blockExerciseId, exerciseDefinition, block, newCompletions);
 		}
-		// 4. Default save for toggling an exercise or completing the final set
-		saveWorkoutProgressToStorage(this.currentWorkoutId, {
-			completedSets: newCompletedSets,
-			exerciseCompletionInCurrentSet: newCompletions,
-			specialSetProgress: this.specialSetProgress,
-			specialSetCurrentRoundIndex: this.specialSetCurrentRoundIndex,
-		});
 	};
 
 	get workoutStats() {

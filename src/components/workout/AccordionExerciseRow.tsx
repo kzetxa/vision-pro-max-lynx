@@ -31,7 +31,6 @@ const AccordionExerciseRow: React.FC<AccordionExerciseRowProps> = observer(({
 	const getCurrentSetForSpecialSet = (specialSet: string): number => {
 		if (!specialSet) return 1;
 		const progress = workoutPageStore.specialSetProgress[specialSet] || 0;
-		const roundIndex = workoutPageStore.specialSetCurrentRoundIndex[specialSet] || 0;
 		
 		// For Half Split Set, determine set based on progress
 		if (specialSet.toLowerCase().includes("half split set")) {

@@ -1,8 +1,6 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
 import * as Accordion from "@radix-ui/react-accordion";
-import * as Progress from "@radix-ui/react-progress";
-import { ChevronDownIcon } from "@radix-ui/react-icons";
 import type { SupabasePopulatedBlock, SupabaseBlockExercise } from "../../lib/types";
 import AccordionExerciseRow from "./AccordionExerciseRow";
 import SpecialSetRow from "./SpecialSetRow";

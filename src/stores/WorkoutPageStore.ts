@@ -151,7 +151,7 @@ export class WorkoutPageStore {
 	};
 
 	// Helper method to handle special set progression
-	handleSpecialSetCompletion = (specialSetName: string, block: SupabasePopulatedBlock): boolean => {
+	handleSpecialSetCompletion = (specialSetName: string, _block: SupabasePopulatedBlock): boolean => {
 		const progress = this.specialSetProgress[specialSetName] || 0;
 		const roundIndex = this.specialSetCurrentRoundIndex[specialSetName] || 0;
 		
@@ -386,8 +386,8 @@ export class WorkoutPageStore {
 	// Handle completion for regular exercises (not in special sets)
 	handleRegularExerciseCompletion = (
 		blockExerciseId: string,
-		exerciseDefinition: SupabaseBlockExercise,
-		block: SupabasePopulatedBlock,
+		_exerciseDefinition: SupabaseBlockExercise,
+		_block: SupabasePopulatedBlock,
 		newCompletions: { [blockExerciseId: string]: boolean }
 	): void => {
 		// For regular exercises, mark as complete immediately (all sets at once)
@@ -623,12 +623,25 @@ export class WorkoutPageStore {
 		let repsText = "";
 		if (parsedRepsInfo.reps > 0 && (!blockExercise.unit || blockExercise.unit.toLowerCase().includes("rep") || blockExercise.unit.trim() === "")) {
 			repsText = `${parsedRepsInfo.reps} reps`;
-			if (blockExercise.sets_and_reps_text && blockExercise.sets_and_reps_text.toLowerCase().includes("left side")) {
-				repsText += " Left Side";
-			} else if (blockExercise.sets_and_reps_text && blockExercise.sets_and_reps_text.toLowerCase().includes("right side")) {
-				repsText += " Right Side";
-			} else if (blockExercise.sets_and_reps_text && blockExercise.sets_and_reps_text.toLowerCase().includes("each side")) {
-				repsText += " each side";
+			// Handle Half Split Set side display based on current progress
+			if (blockExercise.special_set && blockExercise.special_set.toLowerCase().includes("half split set")) {
+				const progress = this.specialSetProgress[blockExercise.special_set] || 0;
+				const currentSet = (progress % 2) + 1;
+				if (currentSet === 1) {
+					repsText += " Left Side";
+				} else {
+					repsText += " Right Side";
+				}
+			} else if (blockExercise.sets_and_reps_text) {
+				// Add side information if present in sets_and_reps_text for non-special sets
+				const text = blockExercise.sets_and_reps_text.toLowerCase();
+				if (text.includes("right side")) {
+					repsText += " Right Side";
+				} else if (text.includes("left side")) {
+					repsText += " Left Side";
+				} else if (text.includes("each side")) {
+					repsText += " each side";
+				}
 			}
 		} else if (blockExercise.sets_and_reps_text) {
 			repsText = blockExercise.sets_and_reps_text;
@@ -658,7 +671,7 @@ export class WorkoutPageStore {
 			isComplete: progress.isComplete,
 		};
 	}
-	// Get the next exercise in the same block
+	// Get the next exercise in the same block, considering special set flows
 	getNextExerciseInBlock(blockExerciseId: string): SupabaseBlockExercise | null {
 		if (!this.workoutData || !blockExerciseId) return null;
 
@@ -674,11 +687,111 @@ export class WorkoutPageStore {
 
 		// Find the current exercise index in the block
 		const currentIndex = block.block_exercises.findIndex(be => be.id === blockExerciseId);
-		if (currentIndex === -1 || currentIndex === block.block_exercises.length - 1) return null;
+		if (currentIndex === -1) return null;
 
-		// Return the next exercise
+		// If current exercise is part of a special set, handle special set flow
+		if (currentBlockExercise.special_set) {
+			return this.getNextExerciseInSpecialSet(currentBlockExercise, block, currentIndex);
+		}
+
+		// For regular exercises, just return the next exercise in the block
+		if (currentIndex === block.block_exercises.length - 1) return null;
 		return block.block_exercises[currentIndex + 1];
 	}
 
+	// Helper method to handle navigation within special sets
+	private getNextExerciseInSpecialSet(
+		currentBlockExercise: SupabaseBlockExercise, 
+		block: SupabasePopulatedBlock, 
+		currentIndex: number
+	): SupabaseBlockExercise | null {
+		const specialSet = currentBlockExercise.special_set!;
+		
+		// Find all exercises in this special set
+		const specialSetExercises = block.block_exercises.filter(ex => ex.special_set === specialSet);
+		const specialSetIndices = specialSetExercises.map(ex => 
+			block.block_exercises.findIndex(be => be.id === ex.id)
+		);
+
+		// Find current position within the special set
+		const currentPositionInSpecialSet = specialSetIndices.indexOf(currentIndex);
+		if (currentPositionInSpecialSet === -1) return null;
+
+		// Check if we're at the last exercise in the special set
+		const isLastInSpecialSet = currentPositionInSpecialSet === specialSetExercises.length - 1;
+
+		if (isLastInSpecialSet) {
+			// We're at the end of the special set exercises
+			if (specialSet.toLowerCase().includes("half split set")) {
+				const progress = this.specialSetProgress[specialSet] || 0;
+				const currentSet = (progress % 2) + 1;
+				
+				if (currentSet === 1) {
+					// We just finished the first side (Left), go back to first exercise for second side (Right)
+					return specialSetExercises[0];
+				} else {
+					// We finished the second side (Right), move to next non-special set exercise
+					return this.getNextNonSpecialSetExercise(block, specialSetIndices);
+				}
+			} else {
+				// For other special set types, check if we need to repeat the set
+				const shouldRepeat = this.shouldRepeatSpecialSet(specialSet);
+				if (shouldRepeat) {
+					// Go back to first exercise in special set
+					return specialSetExercises[0];
+				} else {
+					// Move to next non-special set exercise
+					return this.getNextNonSpecialSetExercise(block, specialSetIndices);
+				}
+			}
+		} else {
+			// Move to next exercise within the special set
+			return specialSetExercises[currentPositionInSpecialSet + 1];
+		}
+	}
+
+	// Helper to find the next exercise after a special set
+	private getNextNonSpecialSetExercise(block: SupabasePopulatedBlock, specialSetIndices: number[]): SupabaseBlockExercise | null {
+		const maxSpecialSetIndex = Math.max(...specialSetIndices);
+		if (maxSpecialSetIndex === block.block_exercises.length - 1) return null;
+		return block.block_exercises[maxSpecialSetIndex + 1];
+	}
+
+	// Helper to determine if a special set should repeat
+	private shouldRepeatSpecialSet(specialSet: string): boolean {
+		const progress = this.specialSetProgress[specialSet] || 0;
+		const roundIndex = this.specialSetCurrentRoundIndex[specialSet] || 0;
+
+		// X-Y-Z format (e.g., "9-7-5")
+		const dashMatches = specialSet.match(/(\d+)-(\d+)-(\d+)/);
+		if (dashMatches) {
+			const rounds = dashMatches.slice(1).map(Number);
+			if (roundIndex < rounds.length) {
+				const targetRounds = rounds[roundIndex];
+				return progress < targetRounds;
+			}
+			return false;
+		}
+
+		// More complex X-Y-Z-... format
+		const complexDashMatches = specialSet.match(/(\d+(?:-\d+)+)/);
+		if (complexDashMatches) {
+			const rounds = complexDashMatches[1].split('-').map(Number);
+			if (roundIndex < rounds.length) {
+				const targetRounds = rounds[roundIndex];
+				return progress < targetRounds;
+			}
+			return false;
+		}
+
+		// Standard Circuit: "X sets" format
+		const setsMatch = specialSet.match(/(\d+)\s+sets?/i);
+		if (setsMatch) {
+			const totalSets = parseInt(setsMatch[1]);
+			return (progress + 1) < totalSets;
+		}
+
+		return false;
+	}
 	// End of new getters
 } 

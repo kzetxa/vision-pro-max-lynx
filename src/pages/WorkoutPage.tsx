@@ -39,14 +39,14 @@ const WorkoutPage: React.FC = observer(() => {
 		<div className={styles.workoutPageContainer}>
 			{workoutPageStore.workoutData && <WorkoutHeader workoutData={workoutPageStore.workoutData} />}
 			{clientId && <p className={styles.clientId}>Client ID: {clientId}</p>}
-			
+
 			{!workoutPageStore.workoutSummary && workoutPageStore.workoutData && (
 				<>
-					<ViewToggleButton 
-						isListView={workoutPageStore.isListView} 
-						onToggle={workoutPageStore.toggleListView} 
+					<ViewToggleButton
+						isListView={workoutPageStore.isListView}
+						onToggle={workoutPageStore.toggleListView}
 					/>
-					<WorkoutBlockDetail 
+					<WorkoutBlockDetail
 						blocks={workoutPageStore.workoutData.blocks}
 					/>
 					<button
@@ -57,8 +57,8 @@ const WorkoutPage: React.FC = observer(() => {
 					</button>
 				</>
 			)}
-			
-			<FinishWorkoutDialog 
+
+			<FinishWorkoutDialog
 				onOpenChange={(open) => open ? workoutPageStore.openFinishDialog() : workoutPageStore.closeFinishDialog()}
 				open={workoutPageStore.isFinishDialogOpen}
 				stats={workoutPageStore.workoutStats}

@@ -5,6 +5,8 @@ import {
 	loadWorkoutProgressFromStorage,
 	clearWorkoutProgressInStorage,
 	saveWorkoutProgressToStorage,
+	loadSelectedLanguageFromStorage,
+	saveSelectedLanguageToStorage,
 } from "../lib/localStorage";
 import {
 	parseSetsAndReps,
@@ -12,7 +14,7 @@ import {
 	getClientIdFromUrl,
 } from "../lib/utils";
 import type { RootStore } from "./RootStore";
-import { getOrGenerateAudio, getWorkoutSummary, saveWorkoutSummary } from "../lib/supabase";
+import { getOrGenerateAudio, translateText, getWorkoutSummary, saveWorkoutSummary } from "../lib/supabase";
 
 
 export class WorkoutPageStore {
@@ -31,6 +33,7 @@ export class WorkoutPageStore {
 	workoutSummary: WorkoutSummary | null = null;
 	isSummaryLoading: boolean = false;
 	startTime: number = Date.now();
+	selectedLanguage: string = 'en'; // Default language
 
 	// These will be set by an init method or passed if needed
 	private currentWorkoutId?: string;
@@ -131,6 +134,9 @@ export class WorkoutPageStore {
 
 	constructor(rootStore: RootStore) {
 		this.rootStore = rootStore;
+		// Load saved language from localStorage
+		this.selectedLanguage = loadSelectedLanguageFromStorage();
+		
 		makeObservable(this, {
 			workoutData: observable,
 			loading: observable,
@@ -146,12 +152,14 @@ export class WorkoutPageStore {
 			workoutSummary: observable,
 			isSummaryLoading: observable,
 			startTime: observable,
+			selectedLanguage: observable,
 
 			// Actions
 			initializePage: action,
 			toggleListView: action,
 			openFinishDialog: action,
 			closeFinishDialog: action,
+			setLanguage: action,
 			handleToggleExerciseCompleteList: action,
 			handleSpecialSetExerciseCompletion: action,
 			handleRegularExerciseCompletion: action,
@@ -347,6 +355,11 @@ export class WorkoutPageStore {
 		this.isFinishDialogOpen = false;
 	};
 
+	setLanguage = (language: string): void => {
+		this.selectedLanguage = language;
+		saveSelectedLanguageToStorage(language);
+	};
+
 	handleToggleExerciseCompleteList = (
 		blockExerciseId: string,
 		exerciseDefinition: SupabaseBlockExercise,
@@ -502,16 +515,16 @@ export class WorkoutPageStore {
 
 		let setsCompleted = 0;
 		let repsCompleted = 0;
-		let setsSkipped = 0;
+		// let setsSkipped = 0;
 		
 		this.workoutData.blocks.forEach(block => {
-			const totalSetsInBlock = block.block_exercises.reduce((max, ex) => Math.max(max, ex.sets || 1), 1);
+			// const totalSetsInBlock = block.block_exercises.reduce((max, ex) => Math.max(max, ex.sets || 1), 1);
 			const completedSetsForBlock = Object.keys(this.exerciseCompletionInCurrentSet)
 				.filter(exId => this.exerciseCompletionInCurrentSet[exId] && block.block_exercises.some(be => be.id === exId))
 				.length;
 			
 			setsCompleted += completedSetsForBlock;
-			setsSkipped += totalSetsInBlock - completedSetsForBlock;
+			// setsSkipped += totalSetsInBlock - completedSetsForBlock;
 
 			block.block_exercises.forEach(be => {
 				if (this.exerciseCompletionInCurrentSet[be.id]) {
@@ -572,7 +585,13 @@ export class WorkoutPageStore {
 		this._setAudioLoading(true);
 		this._setCurrentExerciseAudioUrl(null); // Clear previous URL
 		try {
-			const url = await getOrGenerateAudio(exerciseId, description);
+			// Translate text if language is not English
+			let textToSend = description;
+			if (this.selectedLanguage !== 'en') {
+				textToSend = await translateText(description, this.selectedLanguage);
+			}
+			
+			const url = await getOrGenerateAudio(exerciseId, textToSend, this.selectedLanguage);
 			runInAction(() => {
 				this._setCurrentExerciseAudioUrl(url);
 				this._setAudioLoading(false);

@@ -119,11 +119,33 @@ export const upsertUserVideoUpload = async (
 	}
 };
 
-export const getOrGenerateAudio = async (exerciseId: string, text: string): Promise<string | null> => {
+export const translateText = async (text: string, targetLanguage: string): Promise<string> => {
+	try {
+		const res = await fetch("/.netlify/functions/translate-text", {
+			method: "POST",
+			body: JSON.stringify({ text, targetLanguage }),
+			headers: { "Content-Type": "application/json" },
+		});
+
+		if (!res.ok) {
+			const errorText = await res.text();
+			console.error("Error translating text:", res.status, errorText);
+			throw new Error(`Failed to translate text: ${res.status} ${errorText}`);
+		}
+
+		const { translatedText } = await res.json();
+		return translatedText;
+	} catch (err) {
+		console.error("An unexpected error occurred in translateText:", err);
+		return text; // Return original text if translation fails
+	}
+};
+
+export const getOrGenerateAudio = async (exerciseId: string, text: string, language: string = 'en'): Promise<string | null> => {
 	try {
 		const res = await fetch("/.netlify/functions/generate-voice", {
 			method: "POST",
-			body: JSON.stringify({ exerciseId, text }),
+			body: JSON.stringify({ exerciseId, text, language }),
 			headers: { "Content-Type": "application/json" },
 		});
 

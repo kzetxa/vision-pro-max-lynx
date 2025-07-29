@@ -89,6 +89,21 @@
 @keyframes contentShow { ... }
 */ 
 
+.controlsSection {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: theme.$spacing-lg;
+	gap: theme.$spacing-md;
+	flex-wrap: wrap;
+	
+	@media (max-width: 768px) {
+		flex-direction: column;
+		align-items: stretch;
+		gap: theme.$spacing-sm;
+	}
+}
+
 .finishButton {
 	background-color: theme.$accent-primary;
 	color: white;

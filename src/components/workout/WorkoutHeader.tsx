@@ -4,6 +4,7 @@ import type { SupabasePopulatedWorkout } from "../../lib/types"; // Adjust path 
 import { extractUrlFromStringArray } from "../../lib/utils"; // Adjust path as needed
 import Badge from "../Badge/Badge"; // Assuming Badge is in src/components/Badge.tsx
 import styles from "../../pages/WorkoutPage.module.scss"; // Use existing styles for now
+import LanguageSelector from "../LanguageSelector/LanguageSelector";
 
 interface WorkoutHeaderProps {
 	workoutData: SupabasePopulatedWorkout;
@@ -28,10 +29,12 @@ const WorkoutHeader: React.FC<WorkoutHeaderProps> = observer(({ workoutData }) =
 				</div>
 			)}
 			{/* <h2 className={styles.title}>{workoutTitle}</h2> */} {/* Original title was commented out */}
-			<span style={{ display: "flex", gap: "1rem", marginTop: "1rem", marginBottom: "1rem" }}>
+			<span style={{ display: "flex", gap: "1rem", marginTop: "1rem", marginBottom: "1rem", alignItems: "center", justifyContent: "space-between" }}>
 				<Badge label="Level:" value={workoutData.level} />
 				<Badge label="Duration:" value={workoutData.duration} />
+				<LanguageSelector />
 			</span>
+
 			{/* If clientId display is needed here: */}
 			{/* {clientId && <p className={styles.clientId}>Client ID: {clientId}</p>} */}
 		</>

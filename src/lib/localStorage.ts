@@ -7,6 +7,9 @@ export interface WorkoutProgressStorage {
   specialSetCurrentRoundIndex: { [specialSetName: string]: number };
 }
 
+// Language storage constants
+const LANGUAGE_STORAGE_KEY = 'selectedVoiceLanguage';
+
 const getLocalStorageKey = (workoutId: string): string => {
 	return `workoutProgress_${workoutId}_${getClientIdFromUrl()}`;
 };
@@ -83,5 +86,30 @@ export const clearWorkoutProgressInStorage = (workoutId: string): void => {
 		console.log(`Cleared progress for workout ${workoutId}, client ${getClientIdFromUrl()}`);
 	} catch (error) {
 		console.error("Error clearing progress from local storage:", error);
+	}
+};
+
+/**
+ * Loads the selected voice language from local storage.
+ * Returns 'en' (English) as default if no language is stored.
+ */
+export const loadSelectedLanguageFromStorage = (): string => {
+	try {
+		const storedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+		return storedLanguage || 'en';
+	} catch (error) {
+		console.error("Error loading language from local storage:", error);
+		return 'en';
+	}
+};
+
+/**
+ * Saves the selected voice language to local storage.
+ */
+export const saveSelectedLanguageToStorage = (language: string): void => {
+	try {
+		localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+	} catch (error) {
+		console.error("Error saving language to local storage:", error);
 	}
 }; 

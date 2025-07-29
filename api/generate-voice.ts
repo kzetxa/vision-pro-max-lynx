@@ -6,9 +6,97 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 interface RequestBody {
 	exerciseId: string;
 	text: string;
+	language?: string; // Optional language parameter - defaults to 'en'
 }
 
-const storeVoice = async (buffer: Buffer, filename: string, text: string, exerciseId: string, supabase: SupabaseClient): Promise<string> => {
+// Supported languages for ElevenLabs multilingual model
+const SUPPORTED_LANGUAGES = {
+	'en': 'English',
+	'es': 'Spanish',
+	'fr': 'French',
+	'de': 'German',
+	'it': 'Italian',
+	'pt': 'Portuguese',
+	'pl': 'Polish',
+	'hi': 'Hindi',
+	'ja': 'Japanese',
+	'ko': 'Korean',
+	'zh': 'Chinese',
+	'ru': 'Russian',
+	'ar': 'Arabic',
+	'nl': 'Dutch',
+	'sv': 'Swedish',
+	'da': 'Danish',
+	'no': 'Norwegian',
+	'fi': 'Finnish',
+	'tr': 'Turkish',
+	'he': 'Hebrew',
+	'th': 'Thai',
+	'vi': 'Vietnamese',
+	'cs': 'Czech',
+	'sk': 'Slovak',
+	'hu': 'Hungarian',
+	'ro': 'Romanian',
+	'bg': 'Bulgarian',
+	'hr': 'Croatian',
+	'sl': 'Slovenian',
+	'et': 'Estonian',
+	'lv': 'Latvian',
+	'lt': 'Lithuanian',
+	'el': 'Greek',
+	'id': 'Indonesian',
+	'ms': 'Malay',
+	'uk': 'Ukrainian',
+	'be': 'Belarusian',
+	'ka': 'Georgian',
+	'hy': 'Armenian',
+	'az': 'Azerbaijani',
+	'kk': 'Kazakh',
+	'ky': 'Kyrgyz',
+	'uz': 'Uzbek',
+	'tg': 'Tajik',
+	'tm': 'Turkmen',
+	'mn': 'Mongolian',
+	'my': 'Burmese',
+	'km': 'Khmer',
+	'lo': 'Lao',
+	'ne': 'Nepali',
+	'si': 'Sinhala',
+	'bn': 'Bengali',
+	'ur': 'Urdu',
+	'fa': 'Persian',
+	'ps': 'Pashto',
+	'ku': 'Kurdish',
+	'yi': 'Yiddish',
+	'am': 'Amharic',
+	'sw': 'Swahili',
+	'zu': 'Zulu',
+	'af': 'Afrikaans',
+	'xh': 'Xhosa',
+	'st': 'Southern Sotho',
+	'tn': 'Tswana',
+	'ts': 'Tsonga',
+	've': 'Venda',
+	'nr': 'Southern Ndebele',
+	'ss': 'Swati',
+	'nd': 'Northern Ndebele',
+	'rw': 'Kinyarwanda',
+	'lg': 'Ganda',
+	'ak': 'Akan',
+	'yo': 'Yoruba',
+	'ig': 'Igbo',
+	'ha': 'Hausa',
+	'ff': 'Fulah',
+	'wo': 'Wolof',
+	'sn': 'Shona'
+};
+
+// Helper function to get available languages
+export const getSupportedLanguages = () => {
+	return SUPPORTED_LANGUAGES;
+};
+
+const storeVoice = async (buffer: Buffer, filename: string, text: string, exerciseId: string, language: string, supabase: SupabaseClient): Promise<string> => {
 	const accessKeyId = process.env.STEPHEN_AWS_ACCESS_KEY_ID;
 	const secretAccessKey = process.env.STEPHEN_AWS_SECRET_ACCESS_KEY;
 	const region = process.env.STEPHEN_AWS_REGION || 'us-west-2';
@@ -41,7 +129,7 @@ const storeVoice = async (buffer: Buffer, filename: string, text: string, exerci
 
 	const { error } = await supabase
 		.from('exercise_library')
-		.update({ voice: url })
+		.update({ voice: url, voice_language: language })
 		.eq('id', exerciseId);
 
 	if (error) {
@@ -51,19 +139,22 @@ const storeVoice = async (buffer: Buffer, filename: string, text: string, exerci
 	return url;
 }
 
-const fetchElevenLabsAudio = async (text): Promise<Buffer> => {
+const fetchElevenLabsAudio = async (text: string, language?: string): Promise<Buffer> => {
 	const headers = new Headers()
 	headers.append('Content-Type', 'application/json')
 	if (process.env.ELEVENLABS_API_KEY) {
 		headers.append('xi-api-key', process.env.ELEVENLABS_API_KEY)
 	}
 
+	// Use multilingual model for different languages
+	const modelId = language && language !== 'en' ? "eleven_multilingual_v2" : "eleven_turbo_v2_5";
+
 	const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${process.env.ELEVENLABS_VOICE_ID}`, {
 		method: 'POST',
 		headers: headers,
 		body: JSON.stringify({
 			text,
-			model_id: "eleven_turbo_v2_5",
+			model_id: modelId,
 			voice_settings: {
 				stability: 0.4,
 				similarity_boost: 0.75,
@@ -82,6 +173,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 	try {
 		let exerciseId: string | undefined;
 		let text: string | undefined;
+		let language: string = 'en'; // Default to English
 		try {
 			if (!event.body) {
 				return { statusCode: 400, body: 'Request body is missing' };
@@ -89,6 +181,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 			const body = JSON.parse(event.body) as RequestBody;
 			exerciseId = body.exerciseId;
 			text = body.text;
+			language = body.language || 'en'; // Default to English if not specified
 		} catch (e) {
 			console.error('Error parsing request body:', e);
 			return { statusCode: 400, body: 'Invalid JSON body' };
@@ -119,7 +212,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 		
 		const { data, error } = await supabase
 			.from("exercise_library")
-			.select("voice")
+			.select("voice, voice_language")
 			.eq("id", exerciseId)
 			.single();
 
@@ -127,7 +220,8 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 			console.error("Error fetching exercise voice from Supabase:", error);
 		}
 
-		if (data?.voice) {
+		// Check if voice exists and matches the requested language
+		if (data?.voice && data?.voice_language === language) {
 			return {
 				statusCode: 200,
 				body: JSON.stringify({ url: data.voice })
@@ -137,7 +231,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 		let audioBuffer: Buffer | null = null;
 		try {
 			// Generate voice using ElevenLabs
-			audioBuffer = await fetchElevenLabsAudio(text)
+			audioBuffer = await fetchElevenLabsAudio(text, language)
 		} catch (e) {
 			console.error('Error generating voice:', e);
 			return { statusCode: 500, body: 'Error generating voice' };
@@ -146,7 +240,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 		try {
 			// Store voice in S3 and Supabase
 			const filename = `${uuidv4()}.mp3`
-			const url = await storeVoice(audioBuffer, filename, text, exerciseId, supabase)
+			const url = await storeVoice(audioBuffer, filename, text, exerciseId, language, supabase)
 			return { 
 				statusCode: 200, 
 				body: JSON.stringify({ url })

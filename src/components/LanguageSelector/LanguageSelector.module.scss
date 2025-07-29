@@ -1,0 +1,44 @@
+@use '../../styles/theme.module.scss' as theme;
+
+.languageSelector {
+	display: flex;
+	align-items: center;
+	gap: theme.$spacing-sm;
+	padding: theme.$spacing-sm;
+	background-color: theme.$bg-secondary;
+	border-radius: theme.$border-radius-md;
+	border: theme.$border-width-thin solid theme.$border-primary;
+}
+
+.label {
+	font-size: 0.9em;
+	font-weight: 500;
+	color: theme.$text-primary;
+	white-space: nowrap;
+}
+
+.select {
+	padding: theme.$spacing-xs theme.$spacing-sm;
+	border: theme.$border-width-thin solid theme.$border-primary;
+	border-radius: theme.$border-radius-sm;
+	background-color: theme.$bg-primary;
+	color: theme.$text-primary;
+	font-size: 0.9em;
+	cursor: pointer;
+	min-width: 150px;
+	
+	&:focus {
+		outline: none;
+		border-color: theme.$accent-primary;
+		box-shadow: 0 0 0 2px rgba(90, 140, 255, 0.2);
+	}
+	
+	&:hover {
+		border-color: theme.$accent-primary;
+	}
+	
+	option {
+		background-color: theme.$bg-primary;
+		color: theme.$text-primary;
+	}
+} 
